@@ -1,7 +1,22 @@
 import { Link, Navigate } from 'react-router-dom'
-import { Suspense } from 'react'
+import { Suspense, Component } from 'react'
 import CardScene from '../components/three/CardScene.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+
+/**
+ * Defensive boundary for the 3D scene. If WebGL fails (no GPU, locked-down
+ * browser, CSP blocks an asset) we fall back to a static gradient circle
+ * instead of a blank screen.
+ */
+class SceneBoundary extends Component {
+  state = { failed: false }
+  static getDerivedStateFromError() { return { failed: true } }
+  componentDidCatch(err) { console.warn('[tappe] CardScene failed:', err) }
+  render() {
+    if (this.state.failed) return null
+    return this.props.children
+  }
+}
 
 export default function LandingPage() {
   const { isAuthenticated, loading } = useAuth()
@@ -50,9 +65,11 @@ export default function LandingPage() {
 
           {/* 3D card — rotates with drag, auto-spins when idle */}
           <div className="relative w-72 h-72 cursor-grab active:cursor-grabbing">
-            <Suspense fallback={null}>
-              <CardScene />
-            </Suspense>
+            <SceneBoundary>
+              <Suspense fallback={null}>
+                <CardScene />
+              </Suspense>
+            </SceneBoundary>
           </div>
         </div>
 

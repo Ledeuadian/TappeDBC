@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Environment, ContactShadows, RoundedBox } from '@react-three/drei'
+import { ContactShadows, RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
 
 /**
@@ -184,12 +184,12 @@ export default function CardScene({ className = '' }) {
         dpr={[1, 2]}
         style={{ background: 'transparent' }}
       >
-        <ambientLight intensity={0.6} />
+        <ambientLight intensity={0.7} />
         <directionalLight position={[4, 6, 6]} intensity={1.2} />
-        <directionalLight position={[-4, -2, 3]} intensity={0.4} color="#a78bfa" />
+        <directionalLight position={[-4, -2, 3]} intensity={0.5} color="#a78bfa" />
+        <directionalLight position={[0, -3, 4]} intensity={0.4} color="#ffffff" />
         {texture && <CardMesh texture={texture} />}
         <ContactShadows position={[0, -1.4, 0]} opacity={0.4} blur={2.5} scale={10} />
-        <Environment preset="city" />
       </Canvas>
     </div>
   )

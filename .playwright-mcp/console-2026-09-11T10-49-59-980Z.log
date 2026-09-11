@@ -1,0 +1,174 @@
+[      26ms] [ERROR] The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element. @ http://localhost:5173/:16
+[     473ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-NUMECXU6.js?v=0976d616:21550
+[     636ms] [ERROR] Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap' violates the following Content Security Policy directive: "style-src 'self' 'unsafe-inline'". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked. @ http://localhost:5173/@vite/client:796
+[     708ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:4416
+[     708ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:4416
+[     784ms] [WARNING] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:746
+[     935ms] [ERROR] Connecting to 'https://raw.githack.com/pmndrs/drei-assets/456060a26bbeb8fdf79326f224b6d99b8bcce736/hdri/potsdamer_platz_1k.hdr' violates the following Content Security Policy directive: "connect-src 'self' https://*.supabase.co wss://*.supabase.co". The action has been blocked. @ http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23888
+[     935ms] [ERROR] Fetch API cannot load https://raw.githack.com/pmndrs/drei-assets/456060a26bbeb8fdf79326f224b6d99b8bcce736/hdri/potsdamer_platz_1k.hdr. Refused to connect because it violates the document's Content Security Policy. @ http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23888
+[     960ms] Error: Could not load potsdamer_platz_1k.hdr: Failed to fetch
+    at Object.onError (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17477:39)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23971:40
+[     971ms] Error: Could not load potsdamer_platz_1k.hdr: Failed to fetch
+    at Object.onError (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17477:39)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23971:40
+[     973ms] [ERROR] The above error occurred in the <EnvironmentCube> component:
+
+    at EnvironmentCube (http://localhost:5173/node_modules/.vite/deps/@react-three_drei.js?v=0976d616:103658:3)
+    at Environment (http://localhost:5173/node_modules/.vite/deps/@react-three_drei.js?v=0976d616:103786:16)
+    at Suspense
+    at ErrorBoundary (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:16490:5)
+    at FiberProvider (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:18170:21)
+    at Provider (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17779:3)
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary. @ http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:18166
+[     977ms] Error: Could not load potsdamer_platz_1k.hdr: Failed to fetch
+    at Object.onError (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17477:39)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23971:40
+[     982ms] Error: Could not load potsdamer_platz_1k.hdr: Failed to fetch
+    at Object.onError (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17477:39)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23971:40
+[     984ms] [ERROR] The above error occurred in the <ForwardRef(Canvas)> component:
+
+    at Canvas (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:18236:3)
+    at FiberProvider (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:18170:21)
+    at CanvasWrapper
+    at div
+    at CardScene (http://localhost:5173/src/components/three/CardScene.jsx:204:37)
+    at Suspense
+    at div
+    at div
+    at div
+    at div
+    at LandingPage (http://localhost:5173/src/pages/LandingPage.jsx:24:40)
+    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:4112:5)
+    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:4582:5)
+    at Suspense
+    at App
+    at CardProvider (http://localhost:5173/src/context/CardContext.jsx:70:32)
+    at AuthProvider (http://localhost:5173/src/context/AuthContext.jsx:21:32)
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:4525:15)
+    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:5263:5)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:18166
+[     989ms] Error: Could not load potsdamer_platz_1k.hdr: Failed to fetch
+    at Object.onError (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17477:39)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23971:40
+[    1496ms] [LOG] THREE.WebGLRenderer: Context Lost. @ http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:721
+[   71766ms] [ERROR] The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element. @ http://localhost:5173/:16
+[   71814ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-NUMECXU6.js?v=0976d616:21550
+[   71853ms] [ERROR] Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap' violates the following Content Security Policy directive: "style-src 'self' 'unsafe-inline'". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked. @ http://localhost:5173/@vite/client:796
+[   71861ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:4416
+[   71861ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:4416
+[   71984ms] [WARNING] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:746
+[   72016ms] [ERROR] Connecting to 'https://raw.githack.com/pmndrs/drei-assets/456060a26bbeb8fdf79326f224b6d99b8bcce736/hdri/potsdamer_platz_1k.hdr' violates the following Content Security Policy directive: "connect-src 'self' https://*.supabase.co wss://*.supabase.co". The action has been blocked. @ http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23888
+[   72017ms] [ERROR] Fetch API cannot load https://raw.githack.com/pmndrs/drei-assets/456060a26bbeb8fdf79326f224b6d99b8bcce736/hdri/potsdamer_platz_1k.hdr. Refused to connect because it violates the document's Content Security Policy. @ http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23888
+[   72024ms] Error: Could not load potsdamer_platz_1k.hdr: Failed to fetch
+    at Object.onError (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17477:39)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23971:40
+[   72029ms] Error: Could not load potsdamer_platz_1k.hdr: Failed to fetch
+    at Object.onError (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17477:39)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23971:40
+[   72030ms] [ERROR] The above error occurred in the <EnvironmentCube> component:
+
+    at EnvironmentCube (http://localhost:5173/node_modules/.vite/deps/@react-three_drei.js?v=0976d616:103658:3)
+    at Environment (http://localhost:5173/node_modules/.vite/deps/@react-three_drei.js?v=0976d616:103786:16)
+    at Suspense
+    at ErrorBoundary (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:16490:5)
+    at FiberProvider (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:18170:21)
+    at Provider (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17779:3)
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary. @ http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:18166
+[   72031ms] Error: Could not load potsdamer_platz_1k.hdr: Failed to fetch
+    at Object.onError (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17477:39)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23971:40
+[   72035ms] Error: Could not load potsdamer_platz_1k.hdr: Failed to fetch
+    at Object.onError (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17477:39)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23971:40
+[   72036ms] [ERROR] The above error occurred in the <ForwardRef(Canvas)> component:
+
+    at Canvas (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:18236:3)
+    at FiberProvider (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:18170:21)
+    at CanvasWrapper
+    at div
+    at CardScene (http://localhost:5173/src/components/three/CardScene.jsx:204:37)
+    at Suspense
+    at div
+    at div
+    at div
+    at div
+    at LandingPage (http://localhost:5173/src/pages/LandingPage.jsx:24:40)
+    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:4112:5)
+    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:4582:5)
+    at Suspense
+    at App
+    at CardProvider (http://localhost:5173/src/context/CardContext.jsx:70:32)
+    at AuthProvider (http://localhost:5173/src/context/AuthContext.jsx:21:32)
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:4525:15)
+    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:5263:5)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:18166
+[   72037ms] Error: Could not load potsdamer_platz_1k.hdr: Failed to fetch
+    at Object.onError (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17477:39)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23971:40
+[   72546ms] [LOG] THREE.WebGLRenderer: Context Lost. @ http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:721
+[   73036ms] [ERROR] The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element. @ http://localhost:5173/:16
+[   73081ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-NUMECXU6.js?v=0976d616:21550
+[   73111ms] [ERROR] Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap' violates the following Content Security Policy directive: "style-src 'self' 'unsafe-inline'". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked. @ http://localhost:5173/@vite/client:796
+[   73120ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:4416
+[   73120ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:4416
+[   73174ms] [WARNING] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:746
+[   73199ms] [ERROR] Connecting to 'https://raw.githack.com/pmndrs/drei-assets/456060a26bbeb8fdf79326f224b6d99b8bcce736/hdri/potsdamer_platz_1k.hdr' violates the following Content Security Policy directive: "connect-src 'self' https://*.supabase.co wss://*.supabase.co". The action has been blocked. @ http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23888
+[   73199ms] [ERROR] Fetch API cannot load https://raw.githack.com/pmndrs/drei-assets/456060a26bbeb8fdf79326f224b6d99b8bcce736/hdri/potsdamer_platz_1k.hdr. Refused to connect because it violates the document's Content Security Policy. @ http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23888
+[   73211ms] Error: Could not load potsdamer_platz_1k.hdr: Failed to fetch
+    at Object.onError (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17477:39)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23971:40
+[   73215ms] Error: Could not load potsdamer_platz_1k.hdr: Failed to fetch
+    at Object.onError (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17477:39)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23971:40
+[   73215ms] [ERROR] The above error occurred in the <EnvironmentCube> component:
+
+    at EnvironmentCube (http://localhost:5173/node_modules/.vite/deps/@react-three_drei.js?v=0976d616:103658:3)
+    at Environment (http://localhost:5173/node_modules/.vite/deps/@react-three_drei.js?v=0976d616:103786:16)
+    at Suspense
+    at ErrorBoundary (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:16490:5)
+    at FiberProvider (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:18170:21)
+    at Provider (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17779:3)
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary. @ http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:18166
+[   73219ms] Error: Could not load potsdamer_platz_1k.hdr: Failed to fetch
+    at Object.onError (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17477:39)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23971:40
+[   73220ms] Error: Could not load potsdamer_platz_1k.hdr: Failed to fetch
+    at Object.onError (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17477:39)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23971:40
+[   73221ms] [ERROR] The above error occurred in the <ForwardRef(Canvas)> component:
+
+    at Canvas (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:18236:3)
+    at FiberProvider (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:18170:21)
+    at CanvasWrapper
+    at div
+    at CardScene (http://localhost:5173/src/components/three/CardScene.jsx:204:37)
+    at Suspense
+    at div
+    at div
+    at div
+    at div
+    at LandingPage (http://localhost:5173/src/pages/LandingPage.jsx:24:40)
+    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:4112:5)
+    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:4582:5)
+    at Suspense
+    at App
+    at CardProvider (http://localhost:5173/src/context/CardContext.jsx:70:32)
+    at AuthProvider (http://localhost:5173/src/context/AuthContext.jsx:21:32)
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:4525:15)
+    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=0976d616:5263:5)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:18166
+[   73221ms] Error: Could not load potsdamer_platz_1k.hdr: Failed to fetch
+    at Object.onError (http://localhost:5173/node_modules/.vite/deps/chunk-YHJE3IXY.js?v=0976d616:17477:39)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:23971:40
+[   73739ms] [LOG] THREE.WebGLRenderer: Context Lost. @ http://localhost:5173/node_modules/.vite/deps/chunk-3RLE6T47.js?v=0976d616:721

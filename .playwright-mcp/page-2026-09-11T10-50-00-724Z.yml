@@ -1,0 +1,8 @@
+- generic [ref=e6]:
+  - generic [ref=e7]:
+    - heading "Welcome to Tappe" [level=1] [ref=e8]:
+      - text: Welcome to
+      - generic [ref=e9]: Tappe
+    - paragraph [ref=e10]: Everything you need. One Tap.
+  - link "Get Started" [ref=e18] [cursor=pointer]:
+    - /url: /signup
