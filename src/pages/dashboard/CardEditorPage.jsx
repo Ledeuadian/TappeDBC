@@ -487,6 +487,9 @@ export default function CardEditorPage() {
   // Resolve the active theme based on the card's persisted night_mode flag.
   // Re-runs every render so the toggle updates immediately.
   const theme = getTheme(form.night_mode)
+  // Input field outline. Light mode uses silver to make text fields noticeable;
+  // night mode keeps the standard dark border.
+  const fieldBorder = `1px solid ${theme.border}`
 
   return (
     <div
@@ -567,11 +570,14 @@ export default function CardEditorPage() {
             )}
           </div>
 
-          {/* Logo — drag to reposition, Replace chip, no ring */}
+          {/* Logo — drag to reposition, Replace chip */}
           {form.logo_url ? (
             <div
               className="absolute -bottom-6 right-5 h-12 w-12 rounded-xl overflow-hidden z-30"
-              style={{ background: theme.surface }}
+              style={{
+                background: theme.surface,
+                border: `2px solid ${theme.border}`,
+              }}
             >
               <img
                 src={form.logo_url}
@@ -604,6 +610,7 @@ export default function CardEditorPage() {
               style={{
                 background: theme.surface,
                 color: theme.textMuted,
+                border: `2px solid ${theme.border}`,
               }}
             >
               <PlusIcon className="h-5 w-5" strokeWidth={1.5} />
@@ -616,11 +623,14 @@ export default function CardEditorPage() {
             </label>
           )}
 
-          {/* Profile picture — drag to reposition, Replace chip, white ring */}
+          {/* Profile picture — drag to reposition, Replace chip, themed ring */}
           {form.avatar_url ? (
             <div
               className="absolute -bottom-12 left-5 h-28 w-28 rounded-full overflow-hidden z-20"
-              style={{ background: theme.surface, boxShadow: '0 0 0 4px #ffffff' }}
+              style={{
+                background: theme.surface,
+                border: `2px solid ${theme.border}`,
+              }}
             >
               <img
                 src={form.avatar_url}
@@ -652,7 +662,7 @@ export default function CardEditorPage() {
               className="absolute -bottom-12 left-5 h-28 w-28 rounded-full grid place-items-center cursor-pointer transition z-20"
               style={{
                 background: theme.surface,
-                boxShadow: '0 0 0 4px #ffffff',
+                border: `2px solid ${theme.border}`,
               }}
             >
               <UserIcon className="h-16 w-16" style={{ color: theme.accent }} strokeWidth={1} />
@@ -689,50 +699,50 @@ export default function CardEditorPage() {
           value={form.name || ''}
           onChange={set('name')}
           placeholder="Name"
-          className="w-full px-4 py-2 text-lg font-normal outline-none border-0 transition-colors"
-          style={{ background: theme.surface, color: theme.text, '::placeholder': { color: theme.textMuted } }}
+          className="w-full px-4 py-2 text-lg font-normal outline-none transition-colors"
+          style={{ background: theme.surface, color: theme.text, border: fieldBorder }}
         />
         <input
           value={form.title || ''}
           onChange={set('title')}
           placeholder="Job title"
-          className="w-full px-4 py-2 text-base font-normal outline-none border-0"
-          style={{ background: theme.surface, color: theme.text }}
+          className="w-full px-4 py-2 text-base font-normal outline-none"
+          style={{ background: theme.surface, color: theme.text, border: fieldBorder }}
         />
         <input
           value={form.company || ''}
           onChange={set('company')}
           placeholder="Company"
-          className="w-full px-4 py-2 text-base font-normal outline-none border-0"
-          style={{ background: theme.surface, color: theme.text }}
+          className="w-full px-4 py-2 text-base font-normal outline-none"
+          style={{ background: theme.surface, color: theme.text, border: fieldBorder }}
         />
         <input
           value={form.address || ''}
           onChange={set('address')}
           placeholder="Home Address"
-          className="w-full px-4 py-2 text-base font-normal outline-none border-0"
-          style={{ background: theme.surface, color: theme.text }}
+          className="w-full px-4 py-2 text-base font-normal outline-none"
+          style={{ background: theme.surface, color: theme.text, border: fieldBorder }}
         />
         <input
           value={form.pronouns || ''}
           onChange={set('pronouns')}
           placeholder="Pronouns"
-          className="w-full px-4 py-2 text-base font-normal outline-none border-0"
-          style={{ background: theme.surface, color: theme.text }}
+          className="w-full px-4 py-2 text-base font-normal outline-none"
+          style={{ background: theme.surface, color: theme.text, border: fieldBorder }}
         />
         <input
           value={form.headline || ''}
           onChange={set('headline')}
           placeholder="Headline"
-          className="w-full px-4 py-2 text-base font-normal outline-none border-0"
-          style={{ background: theme.surface, color: theme.text }}
+          className="w-full px-4 py-2 text-base font-normal outline-none"
+          style={{ background: theme.surface, color: theme.text, border: fieldBorder }}
         />
         <input
           value={form.accreditations || ''}
           onChange={set('accreditations')}
           placeholder="Accreditations"
-          className="w-full px-4 py-2 text-base font-normal outline-none border-0"
-          style={{ background: theme.surface, color: theme.text }}
+          className="w-full px-4 py-2 text-base font-normal outline-none"
+          style={{ background: theme.surface, color: theme.text, border: fieldBorder }}
         />
 
         {/* Light / Night mode toggle — outer pill flips with the selected mode */}

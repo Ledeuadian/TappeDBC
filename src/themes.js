@@ -16,6 +16,7 @@ export const THEMES = {
     text: '#0f172a',        // slate-900
     textMuted: '#64748b',   // slate-500
     ring: '#ffffff',        // ring around avatar/logo
+    ringSilver: '#c0c0c0',  // classic silver stroke for profile/logo in light mode
     buttonBg: '#0f172a',    // dark CTA
     buttonText: '#ffffff',
     // Public page background
@@ -33,6 +34,7 @@ export const THEMES = {
     text: '#fafafa',
     textMuted: '#a1a1aa',   // zinc-400
     ring: '#000000',
+    ringSilver: '#71717a',  // zinc-500 silver (kept for parity; not used in dark mode)
     buttonBg: '#ffffff',
     buttonText: '#0f172a',
     pageBg: '#0a0a0a',

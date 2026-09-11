@@ -8,6 +8,9 @@ import { getTheme } from '../themes.js'
  */
 export default function BusinessCard({ card, className = '' }) {
   const theme = getTheme(card?.night_mode)
+  // Light theme: grey stroke around profile/logo for a softer editor preview.
+  // Dark theme: white stroke (matches night surface).
+  const ringColor = theme.border
   const cropStyle = (pos) =>
     pos
       ? {
@@ -61,7 +64,7 @@ export default function BusinessCard({ card, className = '' }) {
             decoding="async"
             className="h-16 w-16 rounded-full object-cover"
             style={{
-              border: '3px solid #ffffff',
+              border: `2px solid ${ringColor}`,
               ...cropStyle(card.avatar_url_pos),
             }}
           />
@@ -71,7 +74,7 @@ export default function BusinessCard({ card, className = '' }) {
             style={{
               background: theme.surface,
               color: theme.text,
-              border: '3px solid #ffffff',
+              border: `2px solid ${ringColor}`,
             }}
           >
             {card.name?.[0]?.toUpperCase() || '?'}
@@ -80,14 +83,19 @@ export default function BusinessCard({ card, className = '' }) {
 
         {/* Logo — top-right of the content block */}
         {card.logo_url && (
-          <img
-            src={card.logo_url}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            className="absolute top-3 right-3 h-9 w-9 rounded-xl object-cover"
-            style={{ background: theme.surface, ...cropStyle(card.logo_url_pos) }}
-          />
+          <div
+            className="absolute top-3 right-3 h-9 w-9 rounded-xl overflow-hidden"
+            style={{ background: theme.surface, border: `2px solid ${ringColor}` }}
+          >
+            <img
+              src={card.logo_url}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover"
+              style={cropStyle(card.logo_url_pos)}
+            />
+          </div>
         )}
 
         {/* Name + pronouns */}

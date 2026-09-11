@@ -195,7 +195,13 @@ export default function PublicCardPage() {
       <div className="flex-1 flex flex-col w-full max-w-md mx-auto">
         {/* Banner photo — rounded corners via inner wrapper so the logo isn't clipped */}
         <div className="relative h-40">
-          <div className="absolute inset-0 overflow-hidden rounded-2xl" style={{ background: theme.surface }}>
+          <div
+            className="absolute inset-0 overflow-hidden rounded-2xl"
+            style={{
+              background: theme.surface,
+              border: `1px solid ${theme.border}`,
+            }}
+          >
             {card.cover_url ? (
               <img
                 src={card.cover_url}
@@ -225,23 +231,30 @@ export default function PublicCardPage() {
               />
             )}
           </div>
-          {/* Logo chip (overlapping bottom-right of cover, no stroke ring) */}
+          {/* Logo chip (overlapping bottom-right of cover, silver stroke ring) */}
           {card.logo_url ? (
-            <img
-              src={card.logo_url}
-              alt={`${card.company || 'Logo'}`}
-              loading="lazy"
-              decoding="async"
-              className="absolute -bottom-5 right-5 h-12 w-12 rounded-xl object-cover z-30"
+            <div
+              className="absolute -bottom-5 right-5 h-12 w-12 rounded-xl overflow-hidden z-30"
               style={{
                 background: theme.surface,
-                objectPosition: card.logo_url_pos
-                  ? `${card.logo_url_pos.x}% ${card.logo_url_pos.y}%`
-                  : undefined,
-                transform: card.logo_url_pos ? `scale(${card.logo_url_pos.scale || 1})` : undefined,
-                transformOrigin: 'center',
+                border: `2px solid ${theme.border}`,
               }}
-            />
+            >
+              <img
+                src={card.logo_url}
+                alt={`${card.company || 'Logo'}`}
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover"
+                style={{
+                  objectPosition: card.logo_url_pos
+                    ? `${card.logo_url_pos.x}% ${card.logo_url_pos.y}%`
+                    : undefined,
+                  transform: card.logo_url_pos ? `scale(${card.logo_url_pos.scale || 1})` : undefined,
+                  transformOrigin: 'center',
+                }}
+              />
+            </div>
           ) : (
             card.company && (
               <div
@@ -266,7 +279,7 @@ export default function PublicCardPage() {
               decoding="async"
               className="h-24 w-24 rounded-full object-cover"
               style={{
-                border: '3px solid #ffffff',
+                border: `1px solid ${theme.border}`,
                 objectPosition: card.avatar_url_pos
                   ? `${card.avatar_url_pos.x}% ${card.avatar_url_pos.y}%`
                   : undefined,
@@ -277,7 +290,11 @@ export default function PublicCardPage() {
           ) : (
             <div
               className="h-24 w-24 rounded-full grid place-items-center text-3xl font-bold"
-              style={{ background: theme.surface, color: theme.text, border: '4px solid #ffffff' }}
+              style={{
+                background: theme.surface,
+                color: theme.text,
+                border: `1px solid ${theme.border}`,
+              }}
             >
               {card.name?.[0]?.toUpperCase() || '?'}
             </div>
