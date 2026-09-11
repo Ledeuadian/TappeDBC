@@ -2,7 +2,7 @@
  * Helpers for building absolute URLs that go onto physical assets
  * (QR codes on printed cards, NDEF URL records on NFC tags).
  *
- * The base URL is `APP_PUBLIC_APP_URL` (no trailing slash), e.g.
+ * The base URL is `APP_URL` (no trailing slash), e.g.
  *   https://tappe.ph
  *
  * If the env var is missing or empty (common in local dev), we fall back
@@ -13,7 +13,7 @@
 const FALLBACK = '' // window is unavailable at module-load on the server
 
 function readOrigin() {
-  const raw = (import.meta.env.APP_PUBLIC_APP_URL || '').trim()
+  const raw = (import.meta.env.APP_URL || '').trim()
   if (raw) return raw.replace(/\/+$/, '')
   if (typeof window !== 'undefined' && window.location?.origin) {
     return window.location.origin.replace(/\/+$/, '')
