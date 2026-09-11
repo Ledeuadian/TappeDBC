@@ -35,7 +35,10 @@ export default function LoginPage() {
         '/dashboard'
       navigate(to, { replace: true })
     } catch (err) {
-      setError(err.message || 'Failed to log in')
+      // Generic message — don't leak whether the account exists, is
+      // unverified, locked, or has the wrong password.
+      console.error('[tappe] login error:', err)
+      setError('Incorrect email or password.')
     } finally {
       setLoading(false)
     }

@@ -134,11 +134,13 @@ export default function PublicCardPage() {
     setNotFound(false)
 
     ;(async () => {
-      // Try to find the card by slug, accepting both published and owner-visible rows
+      // Public read — only published cards. Drafts/unpublished cards are
+      // owner-only via the "cards owner select" RLS policy.
       const { data, error } = await supabase
         .from('cards')
         .select('*')
         .eq('slug', slug)
+        .eq('is_published', true)
         .maybeSingle()
 
       if (!mounted) return
@@ -198,6 +200,8 @@ export default function PublicCardPage() {
               <img
                 src={card.cover_url}
                 alt={`${card.name || 'Card'} cover`}
+                loading="lazy"
+                decoding="async"
                 className="h-full w-full object-cover"
                 style={
                   card.cover_url_pos
@@ -226,6 +230,8 @@ export default function PublicCardPage() {
             <img
               src={card.logo_url}
               alt={`${card.company || 'Logo'}`}
+              loading="lazy"
+              decoding="async"
               className="absolute -bottom-5 right-5 h-12 w-12 rounded-xl object-cover z-30"
               style={{
                 background: theme.surface,
@@ -256,6 +262,8 @@ export default function PublicCardPage() {
             <img
               src={card.avatar_url}
               alt={card.name || 'Profile'}
+              loading="lazy"
+              decoding="async"
               className="h-24 w-24 rounded-full object-cover"
               style={{
                 border: '3px solid #ffffff',
@@ -390,6 +398,8 @@ export default function PublicCardPage() {
             <img
               src={qrLink.values.qr_url}
               alt={`${iconFor(qrLink.icon).label} QR code`}
+              loading="lazy"
+              decoding="async"
               className="mt-4 mx-auto w-full max-w-[240px] rounded-xl bg-white p-2"
             />
             <button

@@ -26,14 +26,27 @@ function pickCardFields(data) {
   return out
 }
 
-/** Generate a URL-safe slug from a name, with a random suffix for uniqueness. */
+/** Cryptographically-strong URL-safe random suffix. */
+function randomSuffix(len = 6) {
+  const bytes = new Uint8Array(len)
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(bytes)
+  } else {
+    for (let i = 0; i < len; i++) bytes[i] = Math.floor(Math.random() * 256)
+  }
+  let out = ''
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789'
+  for (let i = 0; i < len; i++) out += alphabet[bytes[i] % alphabet.length]
+  return out
+}
+
+/** Generate a URL-safe slug from a name, with a CSPRNG suffix for uniqueness. */
 function slugify(name) {
   const base = (name || 'card')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-  const suffix = Math.random().toString(36).slice(2, 6)
-  return `${base || 'card'}-${suffix}`
+  return `${base || 'card'}-${randomSuffix(6)}`
 }
 
 export function CardProvider({ children }) {

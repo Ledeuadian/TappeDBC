@@ -10,11 +10,13 @@ import { supabase } from './supabase.js'
  *                            profiles.is_verified → true
  */
 
-/** Look up a claim code without redeeming. Returns the row or null. */
+/** Look up a claim code without redeeming. Returns the row or null.
+ *  Excludes claimed_by / claimed_at so anon callers can't enumerate
+ *  which users own which codes. */
 export async function lookupClaim(code) {
   const { data, error } = await supabase
     .from('card_claims')
-    .select('code, card_id, claimed_by, claimed_at, expires_at')
+    .select('code, card_id, expires_at')
     .eq('code', code)
     .maybeSingle()
 
@@ -53,7 +55,9 @@ export async function redeemClaim(code) {
     throw err
   }
 
-  // Atomic claim: only succeeds if still unclaimed and unexpired
+  // Atomic claim: only succeeds if still unclaimed and unexpired.
+  // Use .maybeSingle() so a lost race (0 rows updated) returns null instead
+  // of 406 Not Acceptable, which would surface as a misleading error.
   const { data, error } = await supabase
     .from('card_claims')
     .update({ claimed_by: user.id, claimed_at: new Date().toISOString() })
@@ -61,9 +65,15 @@ export async function redeemClaim(code) {
     .is('claimed_by', null)
     .gt('expires_at', new Date().toISOString())
     .select()
-    .single()
+    .maybeSingle()
 
-  if (error || !data) {
+  if (error) {
+    const err = new Error('This code is invalid, already claimed, or expired.')
+    err.code = 'CLAIM_FAILED'
+    throw err
+  }
+  if (!data) {
+    // Lost race or no longer valid
     const err = new Error('This code is invalid, already claimed, or expired.')
     err.code = 'CLAIM_FAILED'
     throw err

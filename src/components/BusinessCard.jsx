@@ -32,6 +32,8 @@ export default function BusinessCard({ card, className = '' }) {
             <img
               src={card.cover_url}
               alt=""
+              loading="lazy"
+              decoding="async"
               className="h-full w-full object-cover"
               style={cropStyle(card.cover_url_pos)}
             />
@@ -55,6 +57,8 @@ export default function BusinessCard({ card, className = '' }) {
           <img
             src={card.avatar_url}
             alt=""
+            loading="lazy"
+            decoding="async"
             className="h-16 w-16 rounded-full object-cover"
             style={{
               border: '3px solid #ffffff',
@@ -79,6 +83,8 @@ export default function BusinessCard({ card, className = '' }) {
           <img
             src={card.logo_url}
             alt=""
+            loading="lazy"
+            decoding="async"
             className="absolute top-3 right-3 h-9 w-9 rounded-xl object-cover"
             style={{ background: theme.surface, ...cropStyle(card.logo_url_pos) }}
           />

@@ -1,20 +1,34 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { Suspense, lazy } from 'react'
 
 import LandingPage from './pages/LandingPage.jsx'
 import LoginPage from './pages/auth/LoginPage.jsx'
 import SignupPage from './pages/auth/SignupPage.jsx'
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.jsx'
-import DashboardHome from './pages/dashboard/DashboardHome.jsx'
-import CardEditorPage from './pages/dashboard/CardEditorPage.jsx'
-import MyCardsPage from './pages/dashboard/MyCardsPage.jsx'
-import SharePage from './pages/dashboard/SharePage.jsx'
-import SettingsPage from './pages/dashboard/SettingsPage.jsx'
-import PublicCardPage from './pages/public/PublicCardPage.jsx'
-import ClaimPage from './pages/ClaimPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
+import ProtectedRoute from './components/ProtectedRoute.jsx'
+
+// Lazy-loaded routes — keeps the initial bundle small. The QR/NFC landing
+// path (/signup) and public card page no longer pull in the editor code.
+const DashboardHome = lazy(() => import('./pages/dashboard/DashboardHome.jsx'))
+const CardEditorPage = lazy(() => import('./pages/dashboard/CardEditorPage.jsx'))
+const MyCardsPage = lazy(() => import('./pages/dashboard/MyCardsPage.jsx'))
+const SharePage = lazy(() => import('./pages/dashboard/SharePage.jsx'))
+const SettingsPage = lazy(() => import('./pages/dashboard/SettingsPage.jsx'))
+const PublicCardPage = lazy(() => import('./pages/public/PublicCardPage.jsx'))
+const ClaimPage = lazy(() => import('./pages/ClaimPage.jsx'))
+
+function RouteFallback() {
+  return (
+    <div className="min-h-screen grid place-items-center">
+      <p className="text-sm text-slate-500">Loading…</p>
+    </div>
+  )
+}
 
 export default function App() {
   return (
+    <Suspense fallback={<RouteFallback />}>
     <Routes>
       {/* Landing — full-screen onboarding, no shared chrome */}
       <Route path="/" element={<LandingPage />} />
@@ -24,12 +38,14 @@ export default function App() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-      {/* Dashboard — public for now, full-screen mobile-first, no shared chrome */}
-      <Route path="/dashboard" element={<DashboardHome />} />
-      <Route path="/dashboard/cards" element={<MyCardsPage />} />
-      <Route path="/dashboard/cards/:cardId" element={<CardEditorPage />} />
-      <Route path="/dashboard/cards/:cardId/share" element={<SharePage />} />
-      <Route path="/dashboard/settings" element={<SettingsPage />} />
+      {/* Dashboard — auth required; ProtectedRoute renders an <Outlet/> */}
+      <Route path="/dashboard" element={<ProtectedRoute />}>
+        <Route index element={<DashboardHome />} />
+        <Route path="cards" element={<MyCardsPage />} />
+        <Route path="cards/:cardId" element={<CardEditorPage />} />
+        <Route path="cards/:cardId/share" element={<SharePage />} />
+        <Route path="settings" element={<SettingsPage />} />
+      </Route>
 
       {/* Public digital card view (no auth) */}
       <Route path="/c/preview" element={<PublicCardPage />} />
@@ -41,5 +57,6 @@ export default function App() {
       <Route path="/404" element={<NotFoundPage />} />
       <Route path="*" element={<Navigate to="/404" replace />} />
     </Routes>
+    </Suspense>
   )
 }

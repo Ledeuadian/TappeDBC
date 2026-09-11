@@ -382,6 +382,73 @@ revoke all on function public.generate_claim_codes(int) from public;
 grant execute on function public.generate_claim_codes(int) to authenticated;
 
 -- ============================================================
+-- Server-side links validation (defense in depth)
+-- ============================================================
+-- cards.links is a jsonb array written directly by the editor. This
+-- trigger validates its shape server-side so a tampered client can't
+-- store arbitrary URLs (javascript:, data:) or off-bucket qr_urls.
+--
+-- Rules:
+--   • links must be a jsonb array (or null)
+--   • each entry: { category, icon, label, values }
+--   • values.value, when present, must start with http:// or https://
+--     (or be a plain email — the app links those via mailto:)
+--   • values.mobile / values.landline must be plain text (no protocol)
+--   • values.qr_url must point at this project's storage bucket
+create or replace function public.tg_validate_card_links()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  entry jsonb;
+  v jsonb;
+  vtext text;
+  bucket_host text;
+begin
+  if new.links is null then return new; end if;
+
+  if jsonb_typeof(new.links) <> 'array' then
+    raise exception 'links must be a JSON array';
+  end if;
+
+  -- Supabase storage public URL host, e.g. xptathxklsddpyrmukhe.supabase.co
+  select regexp_replace(
+    current_setting('app.settings.supabase_url', true) || '',
+    '^https?://', '')
+  into bucket_host;
+
+  for entry in select * from jsonb_array_elements(new.links) loop
+    v := entry->'values';
+    if v is null then continue; end if;
+
+    -- value: URL field — only http(s) allowed
+    vtext := v->>'value';
+    if vtext is not null and vtext <> '' then
+      if vtext !~ '^https?://' and vtext !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then
+        raise exception 'links value must be an http(s) URL or an email: %', vtext;
+      end if;
+    end if;
+
+    -- qr_url: payment QR — must be served by our own storage bucket
+    vtext := v->>'qr_url';
+    if vtext is not null and vtext <> '' then
+      if vtext !~ ('^https://' || coalesce(bucket_host, 'xptathxklsddpyrmukhe.supabase.co') || '/') then
+        raise exception 'qr_url must point at the project storage bucket';
+      end if;
+    end if;
+  end loop;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists cards_validate_links on public.cards;
+create trigger cards_validate_links
+  before insert or update of links on public.cards
+  for each row execute function public.tg_validate_card_links();
+
+-- ============================================================
 -- Storage bucket (for avatars / cover photos / logos)
 -- ============================================================
 -- 1) Dashboard → Storage → New bucket:

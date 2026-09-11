@@ -5,6 +5,10 @@
     <link rel="icon" type="image/svg+xml" href="/tappe.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Tappe — Create, share, and manage your digital business card." />
+    <!-- Security headers — helps mitigate XSS and keeps activation codes
+         (passed as ?code= query params) out of Referer headers. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';" />
+    <meta name="referrer" content="no-referrer" />
     <title>Tappe — Digital Business Card</title>
   </head>
   <body>

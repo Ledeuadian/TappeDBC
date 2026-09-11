@@ -104,7 +104,10 @@ export default function SignupPage() {
 
       navigate(redirect, { replace: true })
     } catch (err) {
-      setGeneralError(err.message || 'Failed to sign up')
+      // Generic message — don't leak whether the email is already
+      // registered, rate-limited, or has a different validation error.
+      console.error('[tappe] signup error:', err)
+      setGeneralError('Could not create your account. Please try again or sign in.')
     } finally {
       setLoading(false)
     }
