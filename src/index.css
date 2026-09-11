@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    min-height: 100vh;
+  }
+  body {
+    @apply bg-white text-slate-900 font-sans antialiased;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-tappe-500 focus:ring-offset-2;
+  }
+  .btn-primary {
+    @apply btn bg-tappe-600 text-white hover:bg-tappe-700 active:bg-tappe-800 shadow-sm;
+  }
+  .btn-secondary {
+    @apply btn bg-white text-slate-800 border border-slate-200 hover:bg-slate-50;
+  }
+  .btn-ghost {
+    @apply btn text-slate-700 hover:bg-slate-100;
+  }
+  .input {
+    @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-tappe-500 focus:outline-none focus:ring-2 focus:ring-tappe-500/30;
+  }
+  .input-dark {
+    @apply w-full rounded-2xl border-none bg-zinc-900 px-4 py-4 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-red-500/40;
+  }
+  .card {
+    @apply rounded-2xl bg-white shadow-sm border border-slate-100;
+  }
+}

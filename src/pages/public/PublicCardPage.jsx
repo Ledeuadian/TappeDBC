@@ -1,0 +1,413 @@
+import { useEffect, useState } from 'react'
+import { useParams, Link, useLocation } from 'react-router-dom'
+import { MailIcon, MapPinIcon, QrCodeIcon } from 'lucide-react'
+import { supabase } from '../../lib/supabase.js'
+import { useCards } from '../../context/CardContext.jsx'
+import { getTheme } from '../../themes.js'
+import { iconFor, linkValue, linkHref } from '../../lib/cardIcons.js'
+
+function ContactItem({ icon, title, subtext, theme }) {
+  return (
+    <div className="flex items-center gap-4">
+      <div
+        className="h-12 w-12 shrink-0 rounded-full grid place-items-center"
+        style={{ background: theme.surface, color: theme.accent }}
+      >
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{title}</p>
+        {subtext && <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{subtext}</p>}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Lightweight brand glyph icons rendered as colored text.
+ * (lucide-react removed brand icons in recent versions.)
+ */
+function Glyph({ letter, color }) {
+  return (
+    <span
+      className="text-lg font-extrabold leading-none"
+      style={{ color }}
+    >
+      {letter}
+    </span>
+  )
+}
+
+/**
+ * Brand logo for a saved card link — PNG from public/logos with a colored
+ * letter-glyph fallback (same pattern as the editor's BrandLogo).
+ */
+function LinkBrandIcon({ link, className = 'h-6 w-6', fallbackColor }) {
+  const meta = iconFor(link.icon)
+  const [failed, setFailed] = useState(false)
+  if (failed) {
+    if (meta.glyph) return <Glyph letter={meta.glyph} color={meta.color || fallbackColor} />
+    return null
+  }
+  return (
+    <img
+      src={meta.logo}
+      alt={meta.label || ''}
+      onError={() => setFailed(true)}
+      className={`${className} object-contain`}
+      draggable={false}
+    />
+  )
+}
+
+/** One saved additional-content entry rendered in the contact list. */
+function SavedLinkItem({ link, theme, onShowQr }) {
+  const meta = iconFor(link.icon)
+  const value = linkValue(link)
+  const href = linkHref(link)
+  const isQr = !!link.values?.qr_url
+
+  // Payment QR entries open the QR image instead of navigating away
+  if (isQr) {
+    return (
+      <button
+        type="button"
+        onClick={() => onShowQr?.(link)}
+        className="w-full text-left"
+      >
+        <ContactItem
+          icon={<LinkBrandIcon link={link} fallbackColor={theme.accent} />}
+          title={`Pay via ${meta.label}`}
+          subtext="Tap to view QR code"
+          theme={theme}
+        />
+      </button>
+    )
+  }
+
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className="block">
+        <ContactItem
+          icon={<LinkBrandIcon link={link} fallbackColor={theme.accent} />}
+          title={value || meta.label}
+          subtext={meta.label}
+          theme={theme}
+        />
+      </a>
+    )
+  }
+
+  return (
+    <ContactItem
+      icon={<LinkBrandIcon link={link} fallbackColor={theme.accent} />}
+      title={value || meta.label}
+      subtext={meta.label}
+      theme={theme}
+    />
+  )
+}
+
+export default function PublicCardPage() {
+  const { slug } = useParams()
+  const location = useLocation()
+  const { getCardBySlug } = useCards()
+  // Ephemeral draft preview (passed via router state from the editor's
+  // "Preview Card" button — never persisted).
+  const draft = location.state?.draft || null
+  // Try the cache first (works for the owner previewing their own card)
+  const cached = slug && slug !== 'preview' ? getCardBySlug(slug) : null
+  const [card, setCard] = useState(draft || cached)
+  const [loading, setLoading] = useState(!draft && !cached)
+  const [notFound, setNotFound] = useState(false)
+  // Payment QR entry currently shown in the lightbox
+  const [qrLink, setQrLink] = useState(null)
+
+  // Fetch directly from Supabase — public page, no owner context, RLS-allowed
+  // (the schema's "cards public select by slug" policy lets anon read
+  // published cards; for owner preview we pass auth.uid() via RLS).
+  // Skipped for the ephemeral draft preview (/c/preview).
+  useEffect(() => {
+    if (draft || slug === 'preview') return
+    let mounted = true
+    setLoading(true)
+    setNotFound(false)
+
+    ;(async () => {
+      // Try to find the card by slug, accepting both published and owner-visible rows
+      const { data, error } = await supabase
+        .from('cards')
+        .select('*')
+        .eq('slug', slug)
+        .maybeSingle()
+
+      if (!mounted) return
+      if (error) {
+        console.error('[tappe] public card fetch error', error)
+        setNotFound(true)
+      } else if (!data) {
+        setNotFound(true)
+      } else {
+        setCard(data)
+      }
+      setLoading(false)
+    })()
+
+    return () => { mounted = false }
+  }, [slug, draft])
+
+  // Resolve theme from the card's night_mode flag
+  const theme = getTheme(card?.night_mode)
+
+  if (notFound) {
+    return (
+      <div className="min-h-screen grid place-items-center" style={{ background: theme.pageBg }}>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold" style={{ color: theme.text }}>Card not found</h1>
+          <p className="mt-2" style={{ color: theme.textMuted }}>This card doesn't exist or has been removed.</p>
+          <Link to="/" className="mt-6 inline-flex font-semibold" style={{ color: theme.accent }}>
+            Back to Tappe
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading || !card) {
+    return (
+      <div className="min-h-screen grid place-items-center" style={{ background: theme.pageBg }}>
+        <p className="text-sm" style={{ color: theme.textMuted }}>Loading…</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col transition-colors duration-300" style={{ background: theme.pageBg }}>
+      {/* Status bar */}
+      <div className="h-11 flex items-center justify-between px-8 shrink-0" aria-hidden="true">
+        <span className="text-xs font-semibold" style={{ color: theme.text }}>9:41</span>
+        <span className="h-6 w-24 rounded-full" style={{ background: theme.bg }} />
+        <span className="text-xs" style={{ color: theme.text }}>􀛨</span>
+      </div>
+
+      <div className="flex-1 flex flex-col w-full max-w-md mx-auto">
+        {/* Banner photo — rounded corners via inner wrapper so the logo isn't clipped */}
+        <div className="relative h-40">
+          <div className="absolute inset-0 overflow-hidden rounded-2xl" style={{ background: theme.surface }}>
+            {card.cover_url ? (
+              <img
+                src={card.cover_url}
+                alt={`${card.name || 'Card'} cover`}
+                className="h-full w-full object-cover"
+                style={
+                  card.cover_url_pos
+                    ? {
+                        objectPosition: `${card.cover_url_pos.x}% ${card.cover_url_pos.y}%`,
+                        transform: `scale(${card.cover_url_pos.scale || 1})`,
+                        transformOrigin: 'center',
+                      }
+                    : undefined
+                }
+              />
+            ) : (
+              <div
+                className="h-full w-full"
+                style={{
+                  background:
+                    theme.bgStyle === 'solid' || card.night_mode
+                      ? theme.bg
+                      : 'linear-gradient(135deg, #312e81, #581c87, #9a3412)',
+                }}
+              />
+            )}
+          </div>
+          {/* Logo chip (overlapping bottom-right of cover, no stroke ring) */}
+          {card.logo_url ? (
+            <img
+              src={card.logo_url}
+              alt={`${card.company || 'Logo'}`}
+              className="absolute -bottom-5 right-5 h-12 w-12 rounded-xl object-cover z-30"
+              style={{
+                background: theme.surface,
+                objectPosition: card.logo_url_pos
+                  ? `${card.logo_url_pos.x}% ${card.logo_url_pos.y}%`
+                  : undefined,
+                transform: card.logo_url_pos ? `scale(${card.logo_url_pos.scale || 1})` : undefined,
+                transformOrigin: 'center',
+              }}
+            />
+          ) : (
+            card.company && (
+              <div
+                className="absolute -bottom-5 right-5 h-12 w-12 rounded-xl grid place-items-center z-30"
+                style={{ background: theme.accent }}
+              >
+                <span className="text-white text-xs font-bold tracking-wider">
+                  {card.company.split(' ').map((w) => w[0]).join('').slice(0, 3).toUpperCase()}
+                </span>
+              </div>
+            )
+          )}
+        </div>
+
+        {/* Profile picture overlapping banner */}
+        <div className="px-6 -mt-12 relative z-10">
+          {card.avatar_url ? (
+            <img
+              src={card.avatar_url}
+              alt={card.name || 'Profile'}
+              className="h-24 w-24 rounded-full object-cover"
+              style={{
+                border: '3px solid #ffffff',
+                objectPosition: card.avatar_url_pos
+                  ? `${card.avatar_url_pos.x}% ${card.avatar_url_pos.y}%`
+                  : undefined,
+                transform: card.avatar_url_pos ? `scale(${card.avatar_url_pos.scale || 1})` : undefined,
+                transformOrigin: 'center',
+              }}
+            />
+          ) : (
+            <div
+              className="h-24 w-24 rounded-full grid place-items-center text-3xl font-bold"
+              style={{ background: theme.surface, color: theme.text, border: '4px solid #ffffff' }}
+            >
+              {card.name?.[0]?.toUpperCase() || '?'}
+            </div>
+          )}
+
+          {/* Name + pronouns */}
+          <div className="mt-3 flex items-baseline gap-2 flex-wrap">
+            <h1 className="text-2xl font-bold" style={{ color: theme.text }}>{card.name}</h1>
+            {card.pronouns && (
+              <span className="text-sm" style={{ color: theme.textMuted }}>({card.pronouns})</span>
+            )}
+          </div>
+
+          {/* Job title on its own line */}
+          {card.title && (
+            <p className="text-base mt-1" style={{ color: theme.text }}>
+              {card.title}
+            </p>
+          )}
+
+          {/* Company name on a separate line below the title */}
+          {card.company && (
+            <p className="text-base mt-0.5" style={{ color: '#ffffff' }}>
+              {card.company}
+            </p>
+          )}
+
+          {/* Headline — muted tagline below company */}
+          {card.headline && (
+            <p className="text-sm mt-1" style={{ color: theme.textMuted }}>
+              {card.headline}
+            </p>
+          )}
+
+          {/* Tagline / bio */}
+          {card.bio && <p className="text-sm mt-2 italic" style={{ color: theme.textMuted }}>{card.bio}</p>}
+
+          {/* Save Contact CTA — black in light mode, strong orange in night */}
+          <button
+            className="w-full mt-5 rounded-full text-sm font-bold py-3.5 active:scale-[0.98] transition shadow-lg"
+            style={{
+              background: card.night_mode ? '#ea580c' : '#0f172a',
+              color: '#ffffff',
+              border: `1px solid ${card.night_mode ? '#c2410c' : '#1e293b'}`,
+            }}
+          >
+            Save Contact
+          </button>
+
+          {/* Contact list */}
+          <div className="mt-6 space-y-5 pb-6">
+            {card.email && (
+              <ContactItem
+                icon={<MailIcon className="h-5 w-5" style={{ color: theme.accent }} />}
+                title={card.email}
+                subtext="Work"
+                theme={theme}
+              />
+            )}
+            {card.address && (
+              <ContactItem
+                icon={<MapPinIcon className="h-5 w-5" style={{ color: theme.accent }} />}
+                title={card.address}
+                subtext="Home Address"
+                theme={theme}
+              />
+            )}
+            {/* Saved additional-content links (from the editor) */}
+            {Array.isArray(card.links) && card.links.length > 0 && (
+              <div className="space-y-5">
+                {card.links.map((link, idx) => (
+                  <SavedLinkItem
+                    key={idx}
+                    link={link}
+                    theme={theme}
+                    onShowQr={(l) => setQrLink(l)}
+                  />
+                ))}
+              </div>
+            )}
+
+            <ContactItem
+              icon={<QrCodeIcon className="h-5 w-5" style={{ color: theme.text }} />}
+              title="View QR Code"
+              theme={theme}
+            />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 text-right">
+          <span className="text-xs font-medium" style={{ color: theme.text }}>Ready to Tappe?</span>
+        </div>
+      </div>
+
+      {/* Payment QR lightbox — shown when a payment entry is tapped */}
+      {qrLink && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={() => setQrLink(null)}
+            className="absolute inset-0 bg-black/70"
+          />
+          <div
+            className="relative w-full max-w-xs rounded-2xl p-6 text-center"
+            style={{ background: theme.surface, border: `1px solid ${theme.border}` }}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <LinkBrandIcon link={qrLink} fallbackColor={theme.accent} className="h-6 w-6" />
+              <h3 className="text-base font-bold" style={{ color: theme.text }}>
+                {iconFor(qrLink.icon).label}
+              </h3>
+            </div>
+            <p className="mt-1 text-xs" style={{ color: theme.textMuted }}>
+              Scan to pay
+            </p>
+            <img
+              src={qrLink.values.qr_url}
+              alt={`${iconFor(qrLink.icon).label} QR code`}
+              className="mt-4 mx-auto w-full max-w-[240px] rounded-xl bg-white p-2"
+            />
+            <button
+              type="button"
+              onClick={() => setQrLink(null)}
+              className="mt-5 rounded-full px-5 py-2 text-sm font-bold text-white active:scale-[0.97] transition"
+              style={{ background: theme.accent }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* iOS home indicator */}
+      <div className="flex justify-center pb-4 shrink-0" aria-hidden="true">
+        <div className="h-1.5 w-36 rounded-full" style={{ background: theme.border }} />
+      </div>
+    </div>
+  )
+}

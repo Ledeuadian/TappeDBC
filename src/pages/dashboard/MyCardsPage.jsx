@@ -1,0 +1,43 @@
+import { Link } from 'react-router-dom'
+import { useCards } from '../../context/CardContext.jsx'
+import BusinessCard from '../../components/BusinessCard.jsx'
+
+export default function MyCardsPage() {
+  const { cards, createCard, deleteCard } = useCards()
+
+  return (
+    <div className="p-6 sm:p-10 max-w-6xl">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">My cards</h1>
+          <p className="text-sm text-slate-500 mt-1">All your digital business cards.</p>
+        </div>
+        <button
+          className="btn-primary"
+          onClick={() => createCard({ name: 'New card', title: '', company: '', theme: 'violet' })}
+        >
+          + New card
+        </button>
+      </div>
+
+      <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {cards.map((card) => (
+          <div key={card.id} className="relative group">
+            <Link to={`/dashboard/cards/${card.id}`}>
+              <BusinessCard card={card} className="group-hover:shadow-md transition" />
+            </Link>
+            <button
+              onClick={() => deleteCard(card.id)}
+              className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 px-2.5 py-1 rounded-lg bg-white/90 text-xs font-medium text-red-600 hover:bg-red-50 border border-red-200 transition"
+            >
+              Delete
+            </button>
+          </div>
+        ))}
+        {cards.length === 0 && (
+          <p className="text-sm text-slate-500">No cards yet — create your first one!</p>
+        )}
+      </div>
+    </div>
+  )
+}
