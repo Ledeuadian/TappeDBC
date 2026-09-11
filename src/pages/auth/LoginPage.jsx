@@ -3,6 +3,8 @@ import { Link, Navigate, useNavigate, useLocation, useSearchParams } from 'react
 import { useAuth } from '../../context/AuthContext.jsx'
 import { UserIcon, LockIcon, EyeIcon, EyeOffIcon, ArrowRightIcon } from 'lucide-react'
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export default function LoginPage() {
   const { login, isAuthenticated, loading: authLoading } = useAuth()
   const navigate = useNavigate()
@@ -11,7 +13,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
+  const [emailError, setEmailError] = useState('')
+  const [passwordError, setPasswordError] = useState('')
   const [loading, setLoading] = useState(false)
 
   // Already signed in — skip straight to the dashboard (or redirect target).
@@ -25,7 +28,19 @@ export default function LoginPage() {
 
   const onSubmit = async (e) => {
     e.preventDefault()
-    setError('')
+    setEmailError('')
+    setPasswordError('')
+
+    // Client-side validation — mirror signup's per-field messages.
+    if (!EMAIL_REGEX.test(email.trim())) {
+      setEmailError('Please enter a valid email address.')
+      return
+    }
+    if (!password) {
+      setPasswordError('Password is required.')
+      return
+    }
+
     setLoading(true)
     try {
       await login(email, password)
@@ -38,7 +53,7 @@ export default function LoginPage() {
       // Generic message — don't leak whether the account exists, is
       // unverified, locked, or has the wrong password.
       console.error('[tappe] login error:', err)
-      setError('Incorrect email or password.')
+      setEmailError('Incorrect email or password.')
     } finally {
       setLoading(false)
     }
@@ -53,34 +68,50 @@ export default function LoginPage() {
         <h1 className="text-3xl font-bold text-white">Welcome back</h1>
         <p className="mt-2 text-sm text-zinc-400">Sign in to continue</p>
 
-        <form onSubmit={onSubmit} className="mt-10 space-y-4 flex-1">
+        <form onSubmit={onSubmit} className="mt-10 space-y-4 flex-1" noValidate>
           {/* Username or Email */}
-          <div className="relative">
-            <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500" />
-            <input
-              type="email"
-              required
-              autoComplete="email"
-              inputMode="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input-dark pl-12"
-              placeholder="Username or Email"
-            />
+          <div>
+            <div className="relative">
+              <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500" />
+              <input
+                type="email"
+                autoComplete="email"
+                inputMode="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  if (emailError) setEmailError('')
+                }}
+                className={`input-dark pl-12 ${emailError ? 'ring-2 ring-red-500/60' : ''}`}
+                placeholder="Username or Email"
+                aria-invalid={!!emailError}
+                aria-describedby={emailError ? 'login-email-error' : undefined}
+              />
+            </div>
+            {emailError && (
+              <p id="login-email-error" className="mt-1.5 ml-1 text-sm text-red-500">
+                {emailError}
+              </p>
+            )}
           </div>
 
           {/* Password */}
-          <div className="relative">
-            <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500" />
-            <input
-              type={showPassword ? 'text' : 'password'}
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input-dark pl-12 pr-12"
-              placeholder="Password"
-            />
+          <div>
+            <div className="relative">
+              <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value)
+                  if (passwordError) setPasswordError('')
+                }}
+                className={`input-dark pl-12 pr-12 ${passwordError ? 'ring-2 ring-red-500/60' : ''}`}
+                placeholder="Password"
+                aria-invalid={!!passwordError}
+                aria-describedby={passwordError ? 'login-password-error' : undefined}
+              />
             <button
               type="button"
               onClick={() => setShowPassword((s) => !s)}
@@ -88,7 +119,13 @@ export default function LoginPage() {
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
-            </button>
+              </button>
+            </div>
+            {passwordError && (
+              <p id="login-password-error" className="mt-1.5 ml-1 text-sm text-red-500">
+                {passwordError}
+              </p>
+            )}
           </div>
 
           <div className="text-right">
@@ -96,8 +133,6 @@ export default function LoginPage() {
               Forgot password?
             </Link>
           </div>
-
-          {error && <p className="text-sm text-red-500">{error}</p>}
 
           <div className="flex items-center justify-between mt-8">
             <button
