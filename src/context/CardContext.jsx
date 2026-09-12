@@ -9,7 +9,7 @@ const CardContext = createContext(null)
 
 /** Fields of the cards table that the editor may write. */
 const CARD_FIELDS = [
-  'name', 'title', 'company', 'pronouns', 'email', 'phone', 'website',
+  'name', 'title', 'company', 'pronouns', 'email', 'phone', 'website', 'brand_title',
   'address', 'bio', 'headline', 'accreditations',
   'theme_color', 'accent_color', 'bg_style',
   'avatar_url', 'cover_url', 'logo_url', 'night_mode',

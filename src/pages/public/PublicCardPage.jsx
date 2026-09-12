@@ -13,7 +13,7 @@ function ContactItem({ icon, title, subtext, theme }) {
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{title}</p>
+        <p className="text-base font-medium truncate" style={{ color: theme.text }}>{title}</p>
         {subtext && <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{subtext}</p>}
       </div>
     </div>
@@ -216,7 +216,7 @@ export default function PublicCardPage() {
 
   return (
     <div className="min-h-screen flex flex-col transition-colors duration-300" style={{ background: theme.pageBg }}>
-      <div className="flex-1 flex flex-col w-full max-w-md mx-auto pt-4">
+      <div className="flex-1 flex flex-col w-full max-w-md mx-auto pt-0">
         {/* Banner photo — rounded corners via inner wrapper so the logo isn't clipped */}
         <div className="relative h-44">
           <div
@@ -294,16 +294,16 @@ export default function PublicCardPage() {
         </div>
 
         {/* Profile picture overlapping banner */}
-        <div className="px-6 -mt-12 relative z-10">
+        <div className="px-6 -mt-16 relative z-10">
           {card.avatar_url ? (
             <img
               src={card.avatar_url}
               alt={card.name || 'Profile'}
               loading="lazy"
               decoding="async"
-              className="h-24 w-24 rounded-full object-cover"
+              className="h-32 w-32 rounded-full object-cover"
               style={{
-                border: '3px solid #ffffff',
+                border: '4px solid #ffffff',
                 objectPosition: card.avatar_url_pos
                   ? `${card.avatar_url_pos.x}% ${card.avatar_url_pos.y}%`
                   : undefined,
@@ -313,7 +313,7 @@ export default function PublicCardPage() {
             />
           ) : (
             <div
-              className="h-24 w-24 rounded-full grid place-items-center text-3xl font-bold"
+              className="h-32 w-32 rounded-full grid place-items-center text-4xl font-bold"
               style={{
                 background: theme.surface,
                 color: theme.text,
@@ -341,7 +341,7 @@ export default function PublicCardPage() {
 
           {/* Company name on a separate line below the title */}
           {card.company && (
-            <p className="text-base mt-0.5 pl-[18px]" style={{ color: '#ffffff' }}>
+            <p className="text-base mt-0.5 pl-[18px]" style={{ color: theme.text }}>
               {card.company}
             </p>
           )}

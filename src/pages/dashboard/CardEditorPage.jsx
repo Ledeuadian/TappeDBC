@@ -60,6 +60,21 @@ export default function CardEditorPage() {
   })
   // { field, src, baseX, baseY, x, y, scale } — null when not dragging
   const dragRef = useRef(null)
+  // Hidden file inputs — the whole frame click opens them programmatically
+  const fileInputRefs = {
+    cover_url: useRef(null),
+    logo_url: useRef(null),
+    avatar_url: useRef(null),
+  }
+  // Timestamp of the last completed drag — suppresses the click that follows
+  // a drag-release so repositioning never opens the file picker
+  const lastDragEndRef = useRef(0)
+
+  /** Open the file picker for a frame — unless we just finished dragging. */
+  const openPicker = (field) => () => {
+    if (Date.now() - lastDragEndRef.current < 300) return
+    fileInputRefs[field]?.current?.click()
+  }
   // Confirmation popup after drag releases
   const [pendingSave, setPendingSave] = useState(null)
   // Track unsaved changes + save status
@@ -72,6 +87,8 @@ export default function CardEditorPage() {
   const [showStickyPreview, setShowStickyPreview] = useState(false)
   // Collapsible "more content" section — expands the page with extra fields
   const [expanded, setExpanded] = useState(false)
+  // Inline editing of the card name in the top-center nav title
+  const [editingName, setEditingName] = useState(false)
 
   const toggleExpanded = () => {
     setExpanded((v) => !v)
@@ -497,6 +514,7 @@ export default function CardEditorPage() {
     const d = dragRef.current
     if (!d) return
     e.currentTarget?.releasePointerCapture?.(e.pointerId)
+    if (d.moved) lastDragEndRef.current = Date.now()
     dragRef.current = null
     if (!d.moved || !effectiveId) return // it was a click, or card isn't ready yet
     const posField = `${d.field}_pos`
@@ -542,8 +560,40 @@ export default function CardEditorPage() {
           Cancel
         </button>
         <div className="flex items-center gap-1.5">
-          <span className="font-bold" style={{ color: theme.text }}>Tappe</span>
-          <PencilIcon className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
+          {editingName ? (
+            <input
+              autoFocus
+              value={form.brand_title || ''}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, brand_title: e.target.value }))
+                setDirty(true)
+              }}
+              onBlur={() => setEditingName(false)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.currentTarget.blur()
+                if (e.key === 'Escape') setEditingName(false)
+              }}
+              placeholder="Card name"
+              className="font-bold text-center outline-none rounded px-2 py-0.5 w-44"
+              style={{
+                color: theme.text,
+                background: theme.surface,
+                border: `1px solid ${theme.border}`,
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEditingName(true)}
+              className="flex items-center gap-1.5 active:scale-95 transition"
+              aria-label="Edit card name"
+            >
+              <span className="font-bold" style={{ color: theme.text }}>
+                {form.brand_title || 'Tappe'}
+              </span>
+              <PencilIcon className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
+            </button>
+          )}
         </div>
         <button
           onClick={handleSave}
@@ -561,9 +611,18 @@ export default function CardEditorPage() {
         <div className="relative">
           {/* Cover photo — drag to reposition, Replace chip, no modal */}
           <div
-            className="block h-32 w-full overflow-hidden relative"
+            className="block h-32 w-full overflow-hidden relative cursor-pointer"
+            onClick={form.cover_url ? openPicker('cover_url') : undefined}
             style={{ background: theme.surface, border: `1px solid ${theme.border}` }}
           >
+            {/* Shared hidden input — opened by any click on the frame */}
+            <input
+              ref={fileInputRefs.cover_url}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleImageUpload(e, 'cover_url', 'cover')}
+            />
             {form.cover_url ? (
               <img
                 src={form.cover_url}
@@ -577,44 +636,40 @@ export default function CardEditorPage() {
                 style={cropStyle('cover_url')}
               />
             ) : (
-              <label
+              <div
                 className="h-full w-full grid place-items-center text-sm cursor-pointer transition"
                 style={{ color: theme.textMuted }}
               >
                 Add cover photo
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleImageUpload(e, 'cover_url', 'cover')}
-                />
-              </label>
+              </div>
             )}
             {form.cover_url && (
-              <label
-                className="absolute top-2 left-2 rounded-full text-[10px] px-2 py-1 cursor-pointer"
+              <span
+                className="absolute top-2 left-2 rounded-full text-[10px] px-2 py-1 pointer-events-none"
                 style={{ background: 'rgba(0,0,0,0.7)', color: '#ffffff' }}
               >
                 ↻
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleImageUpload(e, 'cover_url', 'cover')}
-                />
-              </label>
+              </span>
             )}
           </div>
 
           {/* Logo — drag to reposition, Replace chip */}
           {form.logo_url ? (
             <div
-              className="absolute -bottom-6 right-5 h-12 w-12 rounded-xl overflow-hidden z-30"
+              className="absolute -bottom-6 right-5 h-12 w-12 rounded-xl overflow-hidden z-30 cursor-pointer"
+              onClick={openPicker('logo_url')}
               style={{
                 background: theme.surface,
                 border: `2px solid ${theme.border}`,
               }}
             >
+              <input
+                ref={fileInputRefs.logo_url}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleImageUpload(e, 'logo_url', 'logo')}
+              />
               <img
                 src={form.logo_url}
                 alt="Logo"
@@ -626,19 +681,13 @@ export default function CardEditorPage() {
                 className="h-full w-full object-cover cursor-grab active:cursor-grabbing touch-none"
                 style={cropStyle('logo_url')}
               />
-              {/* Replace chip */}
-              <label
-                className="absolute top-1 left-1 rounded-full text-[10px] px-2 py-1 cursor-pointer"
+              {/* Replace hint chip */}
+              <span
+                className="absolute top-1 left-1 rounded-full text-[10px] px-2 py-1 pointer-events-none"
                 style={{ background: 'rgba(0,0,0,0.7)', color: '#ffffff' }}
               >
                 ↻
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleImageUpload(e, 'logo_url', 'logo')}
-                />
-              </label>
+              </span>
             </div>
           ) : (
             <label
@@ -662,12 +711,20 @@ export default function CardEditorPage() {
           {/* Profile picture — drag to reposition, Replace chip, themed ring */}
           {form.avatar_url ? (
             <div
-              className="absolute -bottom-12 left-5 h-28 w-28 rounded-full overflow-hidden z-20"
+              className="absolute -bottom-12 left-5 h-28 w-28 rounded-full overflow-hidden z-20 cursor-pointer"
+              onClick={openPicker('avatar_url')}
               style={{
                 background: theme.surface,
                 border: `2px solid ${theme.border}`,
               }}
             >
+              <input
+                ref={fileInputRefs.avatar_url}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleImageUpload(e, 'avatar_url', 'avatar')}
+              />
               <img
                 src={form.avatar_url}
                 alt="Profile"
@@ -679,19 +736,13 @@ export default function CardEditorPage() {
                 className="h-full w-full object-cover cursor-grab active:cursor-grabbing touch-none"
                 style={cropStyle('avatar_url')}
               />
-              {/* Replace chip */}
-              <label
-                className="absolute top-1 left-1 rounded-full text-[10px] px-2 py-1 cursor-pointer"
+              {/* Replace hint chip */}
+              <span
+                className="absolute top-1 left-1 rounded-full text-[10px] px-2 py-1 pointer-events-none"
                 style={{ background: 'rgba(0,0,0,0.7)', color: '#ffffff' }}
               >
                 ↻
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleImageUpload(e, 'avatar_url', 'avatar')}
-                />
-              </label>
+              </span>
             </div>
           ) : (
             <label
@@ -778,8 +829,11 @@ export default function CardEditorPage() {
           {(form.accreditations || '').split(',').map((acc, idx, arr) => (
             <div key={idx} className="relative">
               <input
-                value={acc.trim()}
+                value={acc}
                 onChange={(e) => {
+                  // A space would never survive the trim below — but it's
+                  // the only reason to type one, so strip it from the
+                  // "collapse trailing empty field" cleanup only.
                   const items = (form.accreditations || '').split(',')
                   items[idx] = e.target.value
                   // Don't persist a trailing comma when the user hasn't typed

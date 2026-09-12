@@ -50,7 +50,7 @@ function CardMesh({ texture }) {
       {/* Card body — ultra-thin matte plastic edge */}
       <RoundedBox
         ref={bodyRef}
-        args={[3.4, 2.1, 0.05]}
+        args={[3.8, 2.1, 0.05]}
         radius={0.1}
         smoothness={4}
         castShadow
@@ -65,7 +65,7 @@ function CardMesh({ texture }) {
 
       {/* Front face — animated "Tappe" wordmark, matte plastic card finish */}
       <mesh position={[0, 0, 0.026]}>
-        <planeGeometry args={[3.3, 2.0]} />
+        <planeGeometry args={[3.7, 2.0]} />
         <meshStandardMaterial
           map={texture}
           transparent
@@ -103,7 +103,7 @@ function useTappeTexture() {
       ctx.clearRect(0, 0, 1024, 640)
 
       // "Tappe" wordmark — sliding silver→grey gradient
-      ctx.font = 'bold 140px Inter, Arial, sans-serif'
+      ctx.font = '300 100px Inter, Arial, sans-serif'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       const cx = 512
@@ -132,7 +132,7 @@ function useTappeTexture() {
 
       // NFC-style signal icon on the right side of the card, rotated 90° so
       // the arcs sweep left→right ("lying down") instead of bottom→top.
-      const nfcX = 880
+      const nfcX = 920
       const nfcY = 320
       const iconColor = '#a1a1aa'
 
@@ -143,15 +143,16 @@ function useTappeTexture() {
       ctx.strokeStyle = iconColor
       ctx.fillStyle = iconColor
       ctx.lineCap = 'round'
-      ctx.lineWidth = 7
+      ctx.lineWidth = 5
 
-      // Center dot
-      ctx.beginPath()
-      ctx.arc(0, -25, 5, 0, Math.PI * 2)
-      ctx.fill()
+      // Center "z" — drawn inside the rotated context so it lies on its side
+      ctx.font = '600 26px Inter, Arial, sans-serif'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('z', 0, -25)
 
       // Three arcs of increasing radius above the dot
-      ;[20, 35, 50].forEach((r) => {
+      ;[12, 21, 30].forEach((r) => {
         ctx.beginPath()
         ctx.arc(0, -25, r, Math.PI * 1.22, Math.PI * 1.78)
         ctx.stroke()

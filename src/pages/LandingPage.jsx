@@ -40,9 +40,9 @@ export default function LandingPage() {
       <div className="flex-1 flex flex-col items-center justify-between px-6 pt-8 pb-8 max-w-md w-full mx-auto">
         {/* Header */}
         <div className="w-full text-left">
-          <h1 className="text-4xl font-extrabold text-white tracking-tight">
+          <h1 className="text-4xl font-extrabold text-white tracking-tight whitespace-nowrap">
             Welcome to{' '}
-            <span className="block bg-gradient-to-b from-zinc-100 via-zinc-300 to-zinc-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-b from-zinc-100 via-zinc-300 to-zinc-500 bg-clip-text text-transparent">
               Tappe
             </span>
           </h1>

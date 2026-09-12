@@ -46,6 +46,7 @@ create table if not exists public.cards (
   slug          text not null unique,
   name          text not null,                   -- display name on card
   title         text,                            -- job title
+  brand_title   text,                            -- custom brand title shown in editor nav
   company       text,                            -- company / org
   pronouns      text,
   email         text,
