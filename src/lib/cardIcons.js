@@ -30,7 +30,6 @@ export const ICON_CATEGORIES = [
     icons: [
       { key: 'facebook', label: 'Facebook', logo: '/logos/Facebook.png', bwLogo: '/logos/Facebook-B&W.png', glyph: 'f', color: '#1877f2' },
       { key: 'tiktok', label: 'TikTok', logo: '/logos/Tiktok.png', bwLogo: '/logos/Tiktok-B&W.png', glyph: 'T', color: '#ff0050' },
-      { key: 'messenger', label: 'Messenger', logo: '/logos/Messenger.png', bwLogo: '/logos/Messenger-B&W.png', glyph: 'M', color: '#0084ff' },
       { key: 'instagram', label: 'Instagram', logo: '/logos/Instagram.png', bwLogo: '/logos/Instagram-B&W.png', glyph: 'I', color: '#e1306c' },
       { key: 'twitter', label: 'Twitter / X', logo: '/logos/X.png', bwLogo: '/logos/X-B&W.png', glyph: 'X', color: '#000000' },
       { key: 'youtube', label: 'YouTube', logo: '/logos/Youtube.png', bwLogo: '/logos/Youtube-B&W.png', glyph: 'Y', color: '#ff0000' },

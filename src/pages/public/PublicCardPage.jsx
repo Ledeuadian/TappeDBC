@@ -69,7 +69,6 @@ const LINK_TITLES = {
   twitter: 'Follow me on X',
   linkedin: 'Connect with me on LinkedIn',
   tiktok: 'Follow me on TikTok',
-  messenger: 'Message me on Messenger',
   youtube: 'Watch me on YouTube',
   whatsapp: 'Chat with me on WhatsApp',
   telegram: 'Message me on Telegram',
