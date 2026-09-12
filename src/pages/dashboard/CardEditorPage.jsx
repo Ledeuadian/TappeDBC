@@ -123,7 +123,7 @@ export default function CardEditorPage() {
 
   function validateLinkValues(iconKey, values) {
     const form = LINK_FORMS[iconKey]
-    const fields = form ? form.fields : [{ key: 'value' }]
+    const fields = form?.fields || [{ key: 'value' }]
     const errors = {}
     for (const f of fields) {
       const msg = validateFieldValue(iconKey, f.key, values?.[f.key] || '')
@@ -152,6 +152,35 @@ export default function CardEditorPage() {
     },
     gcash: { title: 'GCash', qr: true, qrHint: 'Upload your GCash QR code' },
     paymaya: { title: 'Maya', qr: true, qrHint: 'Upload your Maya QR code' },
+  }
+
+  /** Validate the full `form.links` array against the DB trigger's rules so
+   *  the user gets a clear error instead of a cryptic 400 P0001 from
+   *  Postgres. Returns `{ ok: true }` or `{ ok: false, message }`. */
+  function validateAllLinks(links) {
+    if (!Array.isArray(links) || links.length === 0) return { ok: true }
+    const URL_RE = /^https?:\/\//
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    for (let i = 0; i < links.length; i++) {
+      const entry = links[i]
+      const label = entry?.label || entry?.icon || `Link ${i + 1}`
+      const v = entry?.values || {}
+      // text "value" URL/email field — matches tg_validate_card_links
+      if (typeof v.value === 'string' && v.value.trim()) {
+        const t = v.value.trim()
+        if (!URL_RE.test(t) && !EMAIL_RE.test(t)) {
+          return { ok: false, message: `"${label}" value must be a valid URL (https://…) or email.` }
+        }
+      }
+      // qr_url must be a https URL — already enforced by uploadCardAsset,
+      // but cover the case of a manual paste
+      if (typeof v.qr_url === 'string' && v.qr_url.trim()) {
+        if (!URL_RE.test(v.qr_url.trim())) {
+          return { ok: false, message: `"${label}" QR code URL is invalid.` }
+        }
+      }
+    }
+    return { ok: true }
   }
 
   const linkFormFor = (iconKey) =>
@@ -306,6 +335,13 @@ export default function CardEditorPage() {
 
   // Save button — creates the card on first save, updates afterwards
   const handleSave = async () => {
+    // Client-side link validation — mirrors tg_validate_card_links so we
+    // fail fast with a clear message instead of a 400 from the DB trigger.
+    const linkCheck = validateAllLinks(form.links)
+    if (!linkCheck.ok) {
+      alert('Cannot save: ' + linkCheck.message)
+      return
+    }
     setSaving(true)
     try {
       if (isNew && !savedOnceRef.current) {
@@ -737,13 +773,71 @@ export default function CardEditorPage() {
           className="w-full px-4 py-2 text-base font-normal outline-none"
           style={{ background: theme.surface, color: theme.text, border: fieldBorder }}
         />
-        <input
-          value={form.accreditations || ''}
-          onChange={set('accreditations')}
-          placeholder="Accreditations"
-          className="w-full px-4 py-2 text-base font-normal outline-none"
-          style={{ background: theme.surface, color: theme.text, border: fieldBorder }}
-        />
+        {/* Accreditations — multiple fields, persisted comma-separated */}
+        <div className="w-full space-y-2">
+          {(form.accreditations || '').split(',').map((acc, idx, arr) => (
+            <div key={idx} className="relative">
+              <input
+                value={acc.trim()}
+                onChange={(e) => {
+                  const items = (form.accreditations || '').split(',')
+                  items[idx] = e.target.value
+                  // Don't persist a trailing comma when the user hasn't typed
+                  // in the extra field yet
+                  const joined = items.join(',').replace(/,\s*$/, '')
+                  setForm((f) => ({ ...f, accreditations: joined }))
+                  setDirty(true)
+                }}
+                placeholder={idx === 0 ? 'Accreditations' : 'Add accreditation'}
+                className="w-full px-4 py-2 text-base font-normal outline-none"
+                style={{
+                  background: theme.surface,
+                  color: theme.text,
+                  border: fieldBorder,
+                  // Reserve space on the right for the inline ✕ button
+                  paddingRight: idx > 0 || arr.length > 1 ? '2.5rem' : undefined,
+                }}
+              />
+              {/* Inline remove button — only on rows past the first, or the
+                  first when there are multiple rows */}
+              {(idx > 0 || arr.length > 1) && (
+                <button
+                  type="button"
+                  aria-label="Remove accreditation"
+                  onClick={() => {
+                    const items = (form.accreditations || '').split(',')
+                    items.splice(idx, 1)
+                    setForm((f) => ({ ...f, accreditations: items.join(',') }))
+                    setDirty(true)
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 grid place-items-center rounded-full active:scale-95 transition"
+                  style={{ color: theme.textMuted }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="h-3.5 w-3.5">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          ))}
+          {/* + button to add another accreditation field */}
+          <button
+            type="button"
+            onClick={() => {
+              // Append an empty entry — joined with a comma so the next
+              // input renders as its own field
+              const current = form.accreditations || ''
+              setForm((f) => ({ ...f, accreditations: current ? `${current},` : ',' }))
+              setDirty(true)
+            }}
+            className="flex items-center justify-center gap-1.5 w-full py-2 text-sm font-medium rounded-lg active:scale-[0.98] transition"
+            style={{ color: theme.textMuted, border: `1px dashed ${theme.border}` }}
+          >
+            <PlusIcon className="h-4 w-4" strokeWidth={2} />
+            Add accreditation
+          </button>
+        </div>
 
         {/* Light / Night mode toggle — outer pill flips with the selected mode */}
         <div
@@ -895,14 +989,14 @@ export default function CardEditorPage() {
 
       {/* Sticky bottom Preview Card button — appears after scrolling past the top */}
       <div
-        className="fixed bottom-0 inset-x-0 z-40 transition-transform duration-300"
+        className="fixed bottom-0 inset-x-0 z-40 transition-transform duration-300 flex justify-center"
         style={{
           transform: showStickyPreview ? 'translateY(0)' : 'translateY(120%)',
           pointerEvents: showStickyPreview ? 'auto' : 'none',
         }}
       >
         <div
-          className="px-6 py-4"
+          className="w-full max-w-sm px-4 py-4"
           style={{
             background: theme.pageBg,
             borderTop: `1px solid ${theme.border}`,

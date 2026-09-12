@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useLocation } from 'react-router-dom'
-import { MailIcon, MapPinIcon, QrCodeIcon } from 'lucide-react'
+import { MailIcon, QrCodeIcon } from 'lucide-react'
 import { supabase } from '../../lib/supabase.js'
 import { useCards } from '../../context/CardContext.jsx'
 import { getTheme } from '../../themes.js'
@@ -9,10 +9,7 @@ import { iconFor, linkValue, linkHref } from '../../lib/cardIcons.js'
 function ContactItem({ icon, title, subtext, theme }) {
   return (
     <div className="flex items-center gap-4">
-      <div
-        className="h-12 w-12 shrink-0 rounded-full grid place-items-center"
-        style={{ background: theme.surface, color: theme.accent }}
-      >
+      <div className="h-12 w-12 shrink-0 grid place-items-center">
         {icon}
       </div>
       <div className="min-w-0">
@@ -44,14 +41,18 @@ function Glyph({ letter, color }) {
  */
 function LinkBrandIcon({ link, className = 'h-6 w-6', fallbackColor }) {
   const meta = iconFor(link.icon)
+  // Public card uses the B&W logo variants (payments stay full-color).
+  // Falls back to the color logo when no B&W asset exists.
+  const src = meta.bwLogo || meta.logo
   const [failed, setFailed] = useState(false)
   if (failed) {
     if (meta.glyph) return <Glyph letter={meta.glyph} color={meta.color || fallbackColor} />
     return null
   }
+  if (!src) return null
   return (
     <img
-      src={meta.logo}
+      src={src}
       alt={meta.label || ''}
       onError={() => setFailed(true)}
       className={`${className} object-contain`}
@@ -60,12 +61,32 @@ function LinkBrandIcon({ link, className = 'h-6 w-6', fallbackColor }) {
   )
 }
 
+/** Friendly call-to-action titles for social links — shown instead of the
+ *  raw URL value. Icons not listed fall back to the meta label. */
+const LINK_TITLES = {
+  instagram: 'Follow me on Instagram',
+  facebook: 'Friend me on Facebook',
+  twitter: 'Follow me on X',
+  linkedin: 'Connect with me on LinkedIn',
+  tiktok: 'Follow me on TikTok',
+  messenger: 'Message me on Messenger',
+  youtube: 'Watch me on YouTube',
+  whatsapp: 'Chat with me on WhatsApp',
+  telegram: 'Message me on Telegram',
+  discord: 'Join me on Discord',
+  twitch: 'Watch me on Twitch',
+  google: 'Find me on Google',
+  gmap: 'Find me on Google Maps',
+}
+
 /** One saved additional-content entry rendered in the contact list. */
 function SavedLinkItem({ link, theme, onShowQr }) {
   const meta = iconFor(link.icon)
   const value = linkValue(link)
   const href = linkHref(link)
   const isQr = !!link.values?.qr_url
+  // Social links show a CTA title instead of the raw URL
+  const title = LINK_TITLES[link.icon] || value || meta.label
 
   // Payment QR entries open the QR image instead of navigating away
   if (isQr) {
@@ -76,7 +97,7 @@ function SavedLinkItem({ link, theme, onShowQr }) {
         className="w-full text-left"
       >
         <ContactItem
-          icon={<LinkBrandIcon link={link} fallbackColor={theme.accent} />}
+          icon={<LinkBrandIcon link={link} fallbackColor={theme.accent} className="h-10 w-10" />}
           title={`Pay via ${meta.label}`}
           subtext="Tap to view QR code"
           theme={theme}
@@ -89,9 +110,13 @@ function SavedLinkItem({ link, theme, onShowQr }) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" className="block">
         <ContactItem
-          icon={<LinkBrandIcon link={link} fallbackColor={theme.accent} />}
-          title={value || meta.label}
-          subtext={meta.label}
+          icon={<LinkBrandIcon link={link} fallbackColor={theme.accent} className="h-10 w-10" />}
+          title={title}
+          // Email/phone keep the platform label as a small subtitle so the
+          // user sees what kind of contact they're tapping (e.g. "Email",
+          // "Phone"). Social links drop the subtitle — the CTA already says
+          // the platform name.
+          subtext={subtextFor(link.icon, meta.label)}
           theme={theme}
         />
       </a>
@@ -100,12 +125,18 @@ function SavedLinkItem({ link, theme, onShowQr }) {
 
   return (
     <ContactItem
-      icon={<LinkBrandIcon link={link} fallbackColor={theme.accent} />}
-      title={value || meta.label}
-      subtext={meta.label}
+      icon={<LinkBrandIcon link={link} fallbackColor={theme.accent} className="h-10 w-10" />}
+      title={title}
+      subtext={subtextFor(link.icon, meta.label)}
       theme={theme}
     />
   )
+}
+
+/** Icons that should keep the small platform label under their value. */
+const KEEP_SUBTEXT = new Set(['email', 'biz_email', 'phone', 'biz_phone'])
+function subtextFor(icon, label) {
+  return KEEP_SUBTEXT.has(icon) ? label : undefined
 }
 
 export default function PublicCardPage() {
@@ -185,18 +216,11 @@ export default function PublicCardPage() {
 
   return (
     <div className="min-h-screen flex flex-col transition-colors duration-300" style={{ background: theme.pageBg }}>
-      {/* Status bar */}
-      <div className="h-11 flex items-center justify-between px-8 shrink-0" aria-hidden="true">
-        <span className="text-xs font-semibold" style={{ color: theme.text }}>9:41</span>
-        <span className="h-6 w-24 rounded-full" style={{ background: theme.bg }} />
-        <span className="text-xs" style={{ color: theme.text }}>􀛨</span>
-      </div>
-
-      <div className="flex-1 flex flex-col w-full max-w-md mx-auto">
+      <div className="flex-1 flex flex-col w-full max-w-md mx-auto pt-4">
         {/* Banner photo — rounded corners via inner wrapper so the logo isn't clipped */}
-        <div className="relative h-40">
+        <div className="relative h-44">
           <div
-            className="absolute inset-0 overflow-hidden rounded-2xl"
+            className="absolute inset-0 overflow-hidden rounded-3xl"
             style={{
               background: theme.surface,
               border: `1px solid ${theme.border}`,
@@ -234,7 +258,7 @@ export default function PublicCardPage() {
           {/* Logo chip (overlapping bottom-right of cover, silver stroke ring) */}
           {card.logo_url ? (
             <div
-              className="absolute -bottom-5 right-5 h-12 w-12 rounded-xl overflow-hidden z-30"
+              className="absolute -bottom-6 right-10 h-16 w-16 rounded-xl overflow-hidden z-30"
               style={{
                 background: theme.surface,
                 border: `2px solid ${theme.border}`,
@@ -258,7 +282,7 @@ export default function PublicCardPage() {
           ) : (
             card.company && (
               <div
-                className="absolute -bottom-5 right-5 h-12 w-12 rounded-xl grid place-items-center z-30"
+                className="absolute -bottom-6 right-10 h-16 w-16 rounded-xl grid place-items-center z-30"
                 style={{ background: theme.accent }}
               >
                 <span className="text-white text-xs font-bold tracking-wider">
@@ -279,7 +303,7 @@ export default function PublicCardPage() {
               decoding="async"
               className="h-24 w-24 rounded-full object-cover"
               style={{
-                border: `1px solid ${theme.border}`,
+                border: '3px solid #ffffff',
                 objectPosition: card.avatar_url_pos
                   ? `${card.avatar_url_pos.x}% ${card.avatar_url_pos.y}%`
                   : undefined,
@@ -293,7 +317,7 @@ export default function PublicCardPage() {
               style={{
                 background: theme.surface,
                 color: theme.text,
-                border: `1px solid ${theme.border}`,
+                border: '3px solid #ffffff',
               }}
             >
               {card.name?.[0]?.toUpperCase() || '?'}
@@ -301,7 +325,7 @@ export default function PublicCardPage() {
           )}
 
           {/* Name + pronouns */}
-          <div className="mt-3 flex items-baseline gap-2 flex-wrap">
+          <div className="mt-3 flex items-baseline gap-2 flex-wrap pl-[18px]">
             <h1 className="text-2xl font-bold" style={{ color: theme.text }}>{card.name}</h1>
             {card.pronouns && (
               <span className="text-sm" style={{ color: theme.textMuted }}>({card.pronouns})</span>
@@ -310,23 +334,48 @@ export default function PublicCardPage() {
 
           {/* Job title on its own line */}
           {card.title && (
-            <p className="text-base mt-1" style={{ color: theme.text }}>
+            <p className="text-base mt-1 pl-[18px]" style={{ color: theme.text }}>
               {card.title}
             </p>
           )}
 
           {/* Company name on a separate line below the title */}
           {card.company && (
-            <p className="text-base mt-0.5" style={{ color: '#ffffff' }}>
+            <p className="text-base mt-0.5 pl-[18px]" style={{ color: '#ffffff' }}>
               {card.company}
             </p>
           )}
 
           {/* Headline — muted tagline below company */}
           {card.headline && (
-            <p className="text-sm mt-1" style={{ color: theme.textMuted }}>
+            <p className="text-sm mt-1 pl-[18px]" style={{ color: theme.textMuted }}>
               {card.headline}
             </p>
+          )}
+
+          {/* Accreditations — each one in its own subtle pill frame */}
+          {card.accreditations && (
+            <div className="mt-3 pl-[18px] flex flex-wrap gap-2">
+              {card.accreditations
+                .split(',')
+                .map((a) => a.trim())
+                .filter(Boolean)
+                .map((acc, idx) => (
+                  <span
+                    key={idx}
+                    className="px-3 py-1 text-xs font-semibold rounded-lg"
+                    style={{
+                      background: card.night_mode
+                        ? 'rgba(255,255,255,0.08)'
+                        : 'rgba(15, 23, 42, 0.06)',
+                      color: theme.text,
+                      border: `1px solid ${theme.border}`,
+                    }}
+                  >
+                    {acc}
+                  </span>
+                ))}
+            </div>
           )}
 
           {/* Tagline / bio */}
@@ -334,7 +383,7 @@ export default function PublicCardPage() {
 
           {/* Save Contact CTA — black in light mode, strong orange in night */}
           <button
-            className="w-full mt-5 rounded-full text-sm font-bold py-3.5 active:scale-[0.98] transition shadow-lg"
+            className="w-[calc(100%-36px)] mt-5 rounded-2xl text-sm font-bold py-3.5 active:scale-[0.98] transition shadow-lg ml-[18px]"
             style={{
               background: card.night_mode ? '#ea580c' : '#0f172a',
               color: '#ffffff',
@@ -354,27 +403,62 @@ export default function PublicCardPage() {
                 theme={theme}
               />
             )}
+            {/* Any extra email entries from the saved-link picker render
+                immediately below the primary email row — before Address. */}
+            {Array.isArray(card.links) && card.links.length > 0 && (() => {
+              const emailLinks = card.links.filter(
+                (l) => l.icon === 'email' || l.icon === 'biz_email'
+              )
+              if (emailLinks.length === 0) return null
+              return emailLinks.map((link, idx) => (
+                <SavedLinkItem
+                  key={`email-${idx}`}
+                  link={link}
+                  theme={theme}
+                  onShowQr={(l) => setQrLink(l)}
+                />
+              ))
+            })()}
             {card.address && (
               <ContactItem
-                icon={<MapPinIcon className="h-5 w-5" style={{ color: theme.accent }} />}
+                icon={<LinkBrandIcon link={{ icon: 'gmap' }} fallbackColor={theme.accent} className="h-10 w-10" />}
                 title={card.address}
                 subtext="Home Address"
                 theme={theme}
               />
             )}
-            {/* Saved additional-content links (from the editor) */}
-            {Array.isArray(card.links) && card.links.length > 0 && (
-              <div className="space-y-5">
-                {card.links.map((link, idx) => (
-                  <SavedLinkItem
-                    key={idx}
-                    link={link}
-                    theme={theme}
-                    onShowQr={(l) => setQrLink(l)}
-                  />
-                ))}
-              </div>
-            )}
+            {/* Remaining saved links — phone entries hoisted above the rest,
+                then everything else in original order. */}
+            {Array.isArray(card.links) && card.links.length > 0 && (() => {
+              const taken = (l) =>
+                l.icon === 'email' || l.icon === 'biz_email'
+              const phoneLinks = card.links.filter(
+                (l) => !taken(l) && (l.icon === 'phone' || l.icon === 'biz_phone')
+              )
+              const otherLinks = card.links.filter(
+                (l) => !taken(l) && l.icon !== 'phone' && l.icon !== 'biz_phone'
+              )
+              return (
+                <div className="space-y-5">
+                  {phoneLinks.map((link, idx) => (
+                    <SavedLinkItem
+                      key={`phone-${idx}`}
+                      link={link}
+                      theme={theme}
+                      onShowQr={(l) => setQrLink(l)}
+                    />
+                  ))}
+                  {otherLinks.map((link, idx) => (
+                    <SavedLinkItem
+                      key={`link-${idx}`}
+                      link={link}
+                      theme={theme}
+                      onShowQr={(l) => setQrLink(l)}
+                    />
+                  ))}
+                </div>
+              )
+            })()}
 
             <ContactItem
               icon={<QrCodeIcon className="h-5 w-5" style={{ color: theme.text }} />}

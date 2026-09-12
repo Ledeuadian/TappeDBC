@@ -11,6 +11,7 @@ export default function BusinessCard({ card, className = '' }) {
   // Light theme: grey stroke around profile/logo for a softer editor preview.
   // Dark theme: white stroke (matches night surface).
   const ringColor = theme.border
+  const profileRing = '3px solid #ffffff'
   const cropStyle = (pos) =>
     pos
       ? {
@@ -26,9 +27,9 @@ export default function BusinessCard({ card, className = '' }) {
       style={{ background: theme.surface, border: `1px solid ${theme.border}` }}
     >
       {/* Cover photo — rounded top corners via inner clip wrapper */}
-      <div className="relative h-28">
+      <div className="relative h-32">
         <div
-          className="absolute inset-0 overflow-hidden rounded-t-2xl"
+          className="absolute inset-0 overflow-hidden rounded-3xl"
           style={{ background: theme.surface }}
         >
           {card.cover_url ? (
@@ -64,7 +65,7 @@ export default function BusinessCard({ card, className = '' }) {
             decoding="async"
             className="h-16 w-16 rounded-full object-cover"
             style={{
-              border: `2px solid ${ringColor}`,
+              border: profileRing,
               ...cropStyle(card.avatar_url_pos),
             }}
           />
@@ -74,7 +75,7 @@ export default function BusinessCard({ card, className = '' }) {
             style={{
               background: theme.surface,
               color: theme.text,
-              border: `2px solid ${ringColor}`,
+              border: profileRing,
             }}
           >
             {card.name?.[0]?.toUpperCase() || '?'}
@@ -84,7 +85,7 @@ export default function BusinessCard({ card, className = '' }) {
         {/* Logo — top-right of the content block */}
         {card.logo_url && (
           <div
-            className="absolute top-3 right-3 h-9 w-9 rounded-xl overflow-hidden"
+            className="absolute top-3 right-8 h-12 w-12 rounded-xl overflow-hidden"
             style={{ background: theme.surface, border: `2px solid ${ringColor}` }}
           >
             <img
@@ -99,9 +100,10 @@ export default function BusinessCard({ card, className = '' }) {
         )}
 
         {/* Name + pronouns */}
-        <h3 className="mt-3 text-base font-bold" style={{ color: theme.text }}>
-          {card.name || 'Untitled card'}
-        </h3>
+        <div className="pl-20">
+          <h3 className="mt-3 text-base font-bold" style={{ color: theme.text }}>
+            {card.name || 'Untitled card'}
+          </h3>
         {card.pronouns && (
           <span className="text-xs" style={{ color: theme.textMuted }}>
             ({card.pronouns})
@@ -128,6 +130,7 @@ export default function BusinessCard({ card, className = '' }) {
             {card.headline}
           </p>
         )}
+        </div>
       </div>
     </div>
   )
