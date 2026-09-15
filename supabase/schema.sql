@@ -38,6 +38,11 @@ alter table public.cards add column if not exists cover_url_pos  jsonb;
 alter table public.cards add column if not exists logo_url_pos   jsonb;
 alter table public.cards add column if not exists night_mode     boolean not null default false;
 alter table public.cards add column if not exists links          jsonb;
+-- card layout variant: 'standard' (avatar left, logo right) or 'centered'
+-- (avatar centered, @handle, socials in a framed box)
+alter table public.cards add column if not exists layout         text not null default 'standard';
+-- social handle shown as @handle on the centered layout
+alter table public.cards add column if not exists handle         text;
 
 -- ----------------- cards -----------------
 create table if not exists public.cards (

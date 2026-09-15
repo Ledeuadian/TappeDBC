@@ -12,6 +12,7 @@ import ProtectedRoute from './components/ProtectedRoute.jsx'
 // path (/signup) and public card page no longer pull in the editor code.
 const DashboardHome = lazy(() => import('./pages/dashboard/DashboardHome.jsx'))
 const CardEditorPage = lazy(() => import('./pages/dashboard/CardEditorPage.jsx'))
+const CardLayoutPage = lazy(() => import('./pages/dashboard/CardLayoutPage.jsx'))
 const MyCardsPage = lazy(() => import('./pages/dashboard/MyCardsPage.jsx'))
 const SharePage = lazy(() => import('./pages/dashboard/SharePage.jsx'))
 const SettingsPage = lazy(() => import('./pages/dashboard/SettingsPage.jsx'))
@@ -43,6 +44,7 @@ export default function App() {
         <Route index element={<DashboardHome />} />
         <Route path="cards" element={<MyCardsPage />} />
         <Route path="cards/:cardId" element={<CardEditorPage />} />
+        <Route path="cards/:cardId/layout" element={<CardLayoutPage />} />
         <Route path="cards/:cardId/share" element={<SharePage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>

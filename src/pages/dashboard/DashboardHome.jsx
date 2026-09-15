@@ -48,7 +48,12 @@ export default function DashboardHome() {
             <div className="w-full max-w-sm">
               <div className="grid gap-4">
                 {cards.map((card) => (
-                  <Link key={card.id} to={`/dashboard/cards/${card.id}`}>
+                  <Link
+                    key={card.id}
+                    to={`/c/${card.slug}`}
+                    state={{ draft: card }}
+                    title="View card"
+                  >
                     <BusinessCard card={card} className="hover:shadow-md transition" />
                   </Link>
                 ))}

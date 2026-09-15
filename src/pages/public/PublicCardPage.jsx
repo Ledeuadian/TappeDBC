@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link, useLocation } from 'react-router-dom'
-import { MailIcon, QrCodeIcon } from 'lucide-react'
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
+import {
+  MailIcon,
+  QrCodeIcon,
+  ChevronRightIcon,
+  UserRoundIcon,
+  WifiIcon,
+} from 'lucide-react'
 import { supabase } from '../../lib/supabase.js'
 import { useCards } from '../../context/CardContext.jsx'
+import { useAuth } from '../../context/AuthContext.jsx'
 import { getTheme } from '../../themes.js'
 import { iconFor, linkValue, linkHref } from '../../lib/cardIcons.js'
+import OfflineContactQR from '../../components/OfflineContactQR.jsx'
 
 function ContactItem({ icon, title, subtext, theme }) {
   return (
@@ -138,10 +146,231 @@ function subtextFor(icon, label) {
   return KEEP_SUBTEXT.has(icon) ? label : undefined
 }
 
+/** Social platforms shown in the centered layout's icon grid. */
+const CENTERED_SOCIAL_KEYS = ['facebook', 'instagram', 'tiktok', 'linkedin', 'youtube', 'twitter', 'threads', 'discord']
+/** Everything else renders as a full-width row with a chevron. */
+const CENTERED_ROW_KEYS = ['gmap', 'twitch', 'whatsapp', 'telegram', 'google']
+
+/**
+ * "Centered" layout variant — matches the Change Layout page design:
+ * light mode → matte-black page, frame starts at the middle of the avatar;
+ * night mode → single bordered frame around everything.
+ */
+function CenteredLayout({ card, theme, onShowQr, onEdit }) {
+  const cropStyle = (pos) =>
+    pos
+      ? {
+          objectPosition: `${pos.x}% ${pos.y}%`,
+          transform: `scale(${pos.scale || 1})`,
+          transformOrigin: 'center',
+        }
+      : undefined
+
+  // Shared body — everything below the profile picture
+  const body = (
+    <>
+      {/* Name below the picture */}
+      <h1 className="mt-4 text-2xl font-bold" style={{ color: theme.text }}>
+        {card.name || 'Untitled card'}
+      </h1>
+
+      {/* @handle below the name */}
+      <p className="mt-1 text-sm font-semibold" style={{ color: theme.accent }}>
+        @{(card.handle || card.name || 'handle')
+          .toLowerCase()
+          .replace(/^@+/, '')
+          .replace(/[^a-z0-9._-]+/g, '')}
+      </p>
+
+      {/* Headline — cursive, same size as the @handle line */}
+      {card.headline && (
+        <p
+          className="mt-2 text-sm max-w-xs italic"
+          style={{
+            color: theme.textMuted,
+            fontFamily: "'Segoe Script', 'Brush Script MT', 'Comic Sans MS', cursive",
+          }}
+        >
+          {card.headline}
+        </p>
+      )}
+
+      {/* Socials — 4×2 icon grid, only social platforms */}
+      {(() => {
+        const links = Array.isArray(card.links) ? card.links : []
+        const socials = links.filter((l) => CENTERED_SOCIAL_KEYS.includes(l.icon))
+        if (socials.length === 0) return null
+        return (
+          <div className="mt-6 grid grid-cols-4 gap-1.5 place-items-center w-full">
+            {socials.slice(0, 8).map((link, idx) => (
+              <a
+                key={`social-${idx}`}
+                href={linkHref(link) || '#'}
+                target={linkHref(link) ? '_blank' : undefined}
+                rel={linkHref(link) ? 'noopener noreferrer' : undefined}
+                className="h-16 w-16 rounded-xl border grid place-items-center"
+                style={{
+                  borderColor: card.night_mode ? '#f97316' : 'transparent',
+                  background: card.night_mode ? 'rgba(255,255,255,0.04)' : '#1a1a1a',
+                }}
+              >
+                <LinkBrandIcon link={link} fallbackColor={theme.accent} className="h-10 w-10" />
+              </a>
+            ))}
+          </div>
+        )
+      })()}
+
+      {/* Contact / payment entries — individual full-width rows */}
+      {(() => {
+        const links = Array.isArray(card.links) ? card.links : []
+        const rows = links.filter(
+          (l) =>
+            ['email', 'phone', 'gcash', 'paymaya', 'biz_email', 'biz_phone', 'biz_google'].includes(l.icon) ||
+            CENTERED_ROW_KEYS.includes(l.icon)
+        )
+        if (rows.length === 0) return null
+        return (
+          <div className="mt-6 w-full flex flex-col gap-2 text-left">
+            {rows.map((link, idx) => {
+              const meta = iconFor(link.icon)
+              const isQr = !!link.values?.qr_url
+              return (
+                <button
+                  key={`row-${idx}`}
+                  type="button"
+                  onClick={() => isQr && onShowQr(link)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-left"
+                  style={{
+                    border: `1px solid ${theme.border}`,
+                    background: card.night_mode ? 'rgba(255,255,255,0.03)' : 'rgba(15, 23, 42, 0.02)',
+                  }}
+                >
+                  <LinkBrandIcon link={link} fallbackColor={theme.accent} className="h-7 w-7" />
+                  <span className="flex-1 text-sm font-medium truncate" style={{ color: theme.text }}>
+                    {meta.label || link.label}
+                  </span>
+                  <ChevronRightIcon className="h-5 w-5 shrink-0" style={{ color: theme.textMuted }} />
+                </button>
+              )
+            })}
+          </div>
+        )
+      })()}
+
+      {/* Save Contact CTA — orange pill w/ black text in night mode,
+          matte black pill w/ white text in light mode */}
+      <button
+        type="button"
+        className="mt-6 w-full rounded-full text-sm font-bold py-3.5 active:scale-[0.98] transition shadow-lg flex items-center justify-center gap-2"
+        style={{
+          background: card.night_mode ? '#f97316' : '#1a1a1a',
+          color: card.night_mode ? '#000000' : '#ffffff',
+        }}
+      >
+        <UserRoundIcon
+          className="h-5 w-5"
+          style={{ color: card.night_mode ? '#000000' : '#ffffff' }}
+        />
+        Save Contact
+      </button>
+    </>
+  )
+
+  // Shared Tappe header — "Tappe" + wifi on the left, an underlined
+  // "Edit" hyperlink on the right (owner-only), parallel with it.
+  const header = (
+    <div className="w-full flex items-center justify-between gap-1.5">
+      <div className="flex items-center gap-1.5">
+        <span
+          className="text-xl font-bold tracking-tight"
+          style={{ color: card.night_mode ? theme.text : '#ffffff' }}
+        >
+          Tappe
+        </span>
+        <WifiIcon
+          className="h-4 w-4 rotate-90"
+          style={{ color: card.night_mode ? theme.accent : '#ffffff' }}
+        />
+      </div>
+      {onEdit && (
+        <button
+          type="button"
+          onClick={onEdit}
+          className="text-sm font-semibold underline underline-offset-4 active:scale-95 transition"
+          style={{ color: card.night_mode ? theme.accent : '#ffffff' }}
+        >
+          Edit
+        </button>
+      )}
+    </div>
+  )
+
+  // Shared avatar — centered, white border in light mode only
+  const avatar = card.avatar_url ? (
+    <img
+      src={card.avatar_url}
+      alt={card.name || 'Profile'}
+      loading="lazy"
+      decoding="async"
+      className="h-28 w-28 rounded-full object-cover"
+      style={{
+        border: card.night_mode ? undefined : '2px solid #ffffff',
+        ...cropStyle(card.avatar_url_pos),
+      }}
+    />
+  ) : (
+    <div
+      className="h-28 w-28 rounded-full grid place-items-center text-4xl font-bold"
+      style={{
+        background: theme.bg,
+        color: theme.text,
+        border: card.night_mode ? undefined : '2px solid #ffffff',
+      }}
+    >
+      {card.name?.[0]?.toUpperCase() || '?'}
+    </div>
+  )
+
+  // Night mode — single bordered frame around everything
+  if (card.night_mode) {
+    return (
+      <div className="w-full max-w-md mx-auto">
+        <div
+          className="w-full rounded-3xl px-6 pt-10 pb-6 flex flex-col items-center text-center"
+          style={{ background: theme.surface, border: `1px solid ${theme.border}` }}
+        >
+          {header}
+          <div className="mt-4">{avatar}</div>
+          {body}
+        </div>
+      </div>
+    )
+  }
+
+  // Light mode — matte-black page, frame starts at the MIDDLE of the avatar
+  return (
+    <div className="w-full max-w-md mx-auto" style={{ background: 'transparent' }}>
+      <div className="relative w-full pb-10">
+        <div className="px-6 pt-2">{header}</div>
+        <div className="-mt-2 flex justify-center">{avatar}</div>
+        <div
+          className="px-6 pt-20 pb-4 flex flex-col items-center text-center rounded-3xl -mt-14"
+          style={{ background: theme.surface, border: `1px solid ${theme.border}` }}
+        >
+          {body}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function PublicCardPage() {
   const { slug } = useParams()
   const location = useLocation()
+  const navigate = useNavigate()
   const { getCardBySlug } = useCards()
+  const { user } = useAuth()
   // Ephemeral draft preview (passed via router state from the editor's
   // "Preview Card" button — never persisted).
   const draft = location.state?.draft || null
@@ -152,6 +381,13 @@ export default function PublicCardPage() {
   const [notFound, setNotFound] = useState(false)
   // Payment QR entry currently shown in the lightbox
   const [qrLink, setQrLink] = useState(null)
+
+  // Viewer is the owner when:
+  //   - they passed an explicit draft from the dashboard / preview, OR
+  //   - they own the card (auth user id matches card.owner_id)
+  const isOwnerView = Boolean(
+    draft || (user?.id && card?.owner_id && user.id === card.owner_id),
+  )
 
   // Fetch directly from Supabase — public page, no owner context, RLS-allowed
   // (the schema's "cards public select by slug" policy lets anon read
@@ -213,9 +449,91 @@ export default function PublicCardPage() {
     )
   }
 
+  // Centered layout — renders whenever the card's saved layout is
+  // 'centered' (owner preview, dashboard click-through, or public share).
+  if (card.layout === 'centered') {
+    return (
+      <div
+        className="min-h-screen flex flex-col transition-colors duration-300"
+        style={{
+          // Light mode → matte black; night mode keeps theme.pageBg
+          background: card.night_mode ? theme.pageBg : '#1a1a1a',
+        }}
+      >
+        <div className="flex-1 w-full px-5 pt-8 pb-10">
+          <CenteredLayout
+            card={card}
+            theme={theme}
+            onShowQr={(l) => setQrLink(l)}
+            onEdit={isOwnerView ? () => navigate(`/dashboard/cards/${card.id}`) : null}
+          />
+        </div>
+
+        {/* Payment QR lightbox */}
+        {qrLink && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={() => setQrLink(null)}
+              className="absolute inset-0 bg-black/70"
+            />
+            <div
+              className="relative w-full max-w-xs rounded-2xl p-6 text-center"
+              style={{ background: theme.surface, border: `1px solid ${theme.border}` }}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <LinkBrandIcon link={qrLink} fallbackColor={theme.accent} className="h-6 w-6" />
+                <h3 className="text-base font-bold" style={{ color: theme.text }}>
+                  {iconFor(qrLink.icon).label}
+                </h3>
+              </div>
+              <p className="mt-1 text-xs" style={{ color: theme.textMuted }}>
+                Scan to pay
+              </p>
+              <img
+                src={qrLink.values.qr_url}
+                alt={`${iconFor(qrLink.icon).label} QR code`}
+                loading="lazy"
+                decoding="async"
+                className="mt-4 mx-auto w-full max-w-[240px] rounded-xl bg-white p-2"
+              />
+              <button
+                type="button"
+                onClick={() => setQrLink(null)}
+                className="mt-5 rounded-full px-5 py-2 text-sm font-bold text-white active:scale-[0.97] transition"
+                style={{ background: theme.accent }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* iOS home indicator */}
+        <div className="flex justify-center pb-4 shrink-0" aria-hidden="true">
+          <div className="h-1.5 w-36 rounded-full" style={{ background: theme.border }} />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex flex-col transition-colors duration-300" style={{ background: theme.pageBg }}>
-      <div className="flex-1 flex flex-col w-full max-w-md mx-auto pt-0">
+      {/* Owner-only "Edit" link — top-right, above the card */}
+      {isOwnerView && (
+        <div className="w-full max-w-md mx-auto px-6 pt-3 flex justify-end">
+          <button
+            type="button"
+            onClick={() => navigate(`/dashboard/cards/${card.id}`)}
+            className="text-sm font-semibold underline underline-offset-4 active:scale-95 transition"
+            style={{ color: theme.accent }}
+          >
+            Edit
+          </button>
+        </div>
+      )}
+      <div className="relative flex-1 flex flex-col w-full max-w-md mx-auto pt-0">
         {/* Banner photo — rounded corners via inner wrapper so the logo isn't clipped */}
         <div className="relative h-44">
           <div
@@ -254,8 +572,8 @@ export default function PublicCardPage() {
               />
             )}
           </div>
-          {/* Logo chip (overlapping bottom-right of cover, silver stroke ring) */}
-          {card.logo_url ? (
+          {/* Logo chip (stock bottom-right of cover when no custom pos) */}
+          {card.logo_url && card.logo_url_pos?.layoutX == null && (
             <div
               className="absolute -bottom-6 right-10 h-16 w-16 rounded-xl overflow-hidden z-30"
               style={{
@@ -278,23 +596,23 @@ export default function PublicCardPage() {
                 }}
               />
             </div>
-          ) : (
-            card.company && (
-              <div
-                className="absolute -bottom-6 right-10 h-16 w-16 rounded-xl grid place-items-center z-30"
-                style={{ background: theme.accent }}
-              >
-                <span className="text-white text-xs font-bold tracking-wider">
-                  {card.company.split(' ').map((w) => w[0]).join('').slice(0, 3).toUpperCase()}
-                </span>
-              </div>
-            )
+          )}
+          {!card.logo_url && card.company && (
+            <div
+              className="absolute -bottom-6 right-10 h-16 w-16 rounded-xl grid place-items-center z-30"
+              style={{ background: theme.accent }}
+            >
+              <span className="text-white text-xs font-bold tracking-wider">
+                {card.company.split(' ').map((w) => w[0]).join('').slice(0, 3).toUpperCase()}
+              </span>
+            </div>
           )}
         </div>
 
-        {/* Profile picture overlapping banner */}
+        {/* Profile picture overlapping banner — stock position when no
+            custom drag pos is saved. */}
         <div className="px-6 -mt-16 relative z-10">
-          {card.avatar_url ? (
+          {card.avatar_url && card.avatar_url_pos?.layoutX == null ? (
             <img
               src={card.avatar_url}
               alt={card.name || 'Profile'}
@@ -310,7 +628,7 @@ export default function PublicCardPage() {
                 transformOrigin: 'center',
               }}
             />
-          ) : (
+          ) : !card.avatar_url ? (
             <div
               className="h-32 w-32 rounded-full grid place-items-center text-4xl font-bold"
               style={{
@@ -321,7 +639,7 @@ export default function PublicCardPage() {
             >
               {card.name?.[0]?.toUpperCase() || '?'}
             </div>
-          )}
+          ) : null}
 
           {/* Name + pronouns */}
           <div className="mt-3 flex items-baseline gap-2 flex-wrap pl-[18px]">
@@ -467,10 +785,59 @@ export default function PublicCardPage() {
           </div>
         </div>
 
+        {/* Offline contact QR — scannable with just a camera, no internet
+            needed. Encodes the card's saved phone number(s) as a vCard. */}
+        <OfflineContactQR card={card} theme={theme} />
+
         {/* Footer */}
         <div className="px-6 py-4 text-right">
           <span className="text-xs font-medium" style={{ color: theme.text }}>Ready to Tappe?</span>
         </div>
+
+        {/* Custom drag positions — overlaid on the whole card.
+            Positions are a % of the FULL card (cover + content),
+            matching the Change Layout page's drag coordinate space. */}
+        {card.avatar_url && card.avatar_url_pos?.layoutX != null && (
+          <img
+            src={card.avatar_url}
+            alt={card.name || 'Profile'}
+            loading="lazy"
+            decoding="async"
+            className="absolute h-32 w-32 rounded-full object-cover z-30"
+            style={{
+              left: `${card.avatar_url_pos.layoutX}%`,
+              top: `${card.avatar_url_pos.layoutY}%`,
+              border: '4px solid #ffffff',
+              objectPosition: `${card.avatar_url_pos.x}% ${card.avatar_url_pos.y}%`,
+              transform: `scale(${card.avatar_url_pos.scale || 1})`,
+              transformOrigin: 'center',
+            }}
+          />
+        )}
+        {card.logo_url && card.logo_url_pos?.layoutX != null && (
+          <div
+            className="absolute h-16 w-16 rounded-xl overflow-hidden z-30"
+            style={{
+              left: `${card.logo_url_pos.layoutX}%`,
+              top: `${card.logo_url_pos.layoutY}%`,
+              background: theme.surface,
+              border: `2px solid ${theme.border}`,
+            }}
+          >
+            <img
+              src={card.logo_url}
+              alt={`${card.company || 'Logo'}`}
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover"
+              style={{
+                objectPosition: `${card.logo_url_pos.x}% ${card.logo_url_pos.y}%`,
+                transform: `scale(${card.logo_url_pos.scale || 1})`,
+                transformOrigin: 'center',
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Payment QR lightbox — shown when a payment entry is tapped */}

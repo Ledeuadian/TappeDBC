@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import {
   PencilIcon, UserIcon, PlusIcon, ChevronDownIcon,
 } from 'lucide-react'
@@ -34,6 +34,7 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import { uploadCardAsset } from '../../lib/storage.js'
 import { getTheme } from '../../themes.js'
 import { ICON_CATEGORIES, CARD_LINK_ICONS as ALL_ICONS, linkValue } from '../../lib/cardIcons.js'
+import OfflineContactQR from '../../components/OfflineContactQR.jsx'
 
 /**
  * Plain, sophisticated editor — Personal Info only (for now).
@@ -42,6 +43,7 @@ import { ICON_CATEGORIES, CARD_LINK_ICONS as ALL_ICONS, linkValue } from '../../
 export default function CardEditorPage() {
   const { cardId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const isNew = cardId === 'new'
   const { getCard, getCardBySlug, createCard, updateCard, loading } = useCards()
   const { user } = useAuth()
@@ -336,6 +338,22 @@ export default function CardEditorPage() {
   useEffect(() => {
     if (!isNew && card && !form.id) setForm(card)
   }, [card, form.id, isNew])
+
+  // Coming back from /layout with unsaved layout positions — apply them
+  // immediately and mark the form dirty so Save picks them up.
+  const layoutDraftAppliedRef = useRef(false)
+  useEffect(() => {
+    const draft = location.state?.layoutDraft
+    if (!draft || layoutDraftAppliedRef.current) return
+    layoutDraftAppliedRef.current = true
+    setForm((f) => ({
+      ...f,
+      avatar_url_pos: draft.avatar_url_pos || f.avatar_url_pos,
+      logo_url_pos: draft.logo_url_pos || f.logo_url_pos,
+      layout: draft.layout || f.layout,
+    }))
+    setDirty(true)
+  }, [location.state])
 
   // Local-only update — persists ONLY when Save is clicked
   const set = (key) => (e) => {
@@ -767,7 +785,11 @@ export default function CardEditorPage() {
         <div className="pt-10">
           <button
             type="button"
-            onClick={() => {/* TODO: open layout picker */}}
+            onClick={() =>
+              navigate(isNew ? '/dashboard/cards/new/layout' : `/dashboard/cards/${effectiveId}/layout`, {
+                state: { draft: form },
+              })
+            }
             className="block mx-auto w-full px-4 py-4 text-sm font-medium transition"
             style={{
               background: theme.surface,
@@ -787,6 +809,13 @@ export default function CardEditorPage() {
           onChange={set('name')}
           placeholder="Name"
           className="w-full px-4 py-2 text-lg font-normal outline-none transition-colors"
+          style={{ background: theme.surface, color: theme.text, border: fieldBorder }}
+        />
+        <input
+          value={form.handle || ''}
+          onChange={set('handle')}
+          placeholder="Handle (shown as @handle on the centered layout)"
+          className="w-full px-4 py-2 text-base font-normal outline-none"
           style={{ background: theme.surface, color: theme.text, border: fieldBorder }}
         />
         <input
@@ -1039,6 +1068,12 @@ export default function CardEditorPage() {
             </div>
           </div>
         </div>
+
+        {/* Offline contact QR — scannable with just a camera, no internet
+            needed. Encodes the card's saved phone number(s) as a vCard.
+            Rendered below the additional-content section so the owner can
+            preview what public viewers will see. */}
+        <OfflineContactQR card={form} theme={theme} />
       </main>
 
       {/* Sticky bottom Preview Card button — appears after scrolling past the top */}

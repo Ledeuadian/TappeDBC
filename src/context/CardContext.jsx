@@ -14,7 +14,7 @@ const CARD_FIELDS = [
   'theme_color', 'accent_color', 'bg_style',
   'avatar_url', 'cover_url', 'logo_url', 'night_mode',
   'avatar_url_pos', 'cover_url_pos', 'logo_url_pos',
-  'is_published', 'slug', 'links',
+  'is_published', 'slug', 'links', 'layout', 'handle',
 ]
 
 /** Pick only known fields so we never send stray form keys to the DB. */
