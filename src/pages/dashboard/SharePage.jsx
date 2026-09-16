@@ -232,17 +232,20 @@ function OfflineQrModal({ card, onlineUrl, canvasId, filename, onClose }) {
     setStep('ready')
   }
 
-  // vCard payload — name, phone(s), email(s), online URL, and the
-  // date-time + location captured at generation time on this device.
+  // vCard payload — name, company, job title, phone(s), email(s),
+  // online URL, and the date-time + location captured at generation
+  // time on this device.
   const vcard = buildVCard({
     name: card.name || '',
+    company: card.company || '',
+    title: card.title || '',
     phones: collectPhones(card),
     emails: collectEmails(card),
     url: onlineUrl,
     note: stamps
       ? [
-          `Met/Generated: ${stamps.when}`,
-          stamps.where ? `Where: ${stamps.where}` : null,
+          `Meeting date/time: ${stamps.when}`,
+          stamps.where ? `Meeting location: ${stamps.where}` : null,
         ]
           .filter(Boolean)
           .join('\\n')

@@ -105,12 +105,16 @@ export function collectPhones(card) {
 /** Build a minimal vCard 3.0 string. Most cameras and dialers import
  *  these without an internet connection.
  *
- *  Optional fields:
- *   - emails: string[]  → EMAIL entries
- *   - url:    string    → URL entry (e.g. the card's online share link)
- *   - note:   string    → NOTE entry (e.g. generation timestamp)
+ *  Fields:
+ *   - name:     string    → FN / N
+ *   - company:  string    → ORG (and TITLE if `title` is provided)
+ *   - title:    string    → TITLE (job title)
+ *   - phones:   string[]  → TEL;TYPE=CELL
+ *   - emails:   string[]  → EMAIL;TYPE=INTERNET
+ *   - url:      string    → URL (card's online share link)
+ *   - note:     string    → NOTE (meeting date-time + location)
  */
-export function buildVCard({ name, phones, emails = [], url = '', note = '' }) {
+export function buildVCard({ name, company = '', title = '', phones = [], emails = [], url = '', note = '' }) {
   const esc = (s) =>
     String(s)
       .replace(/\\/g, '\\\\')
@@ -123,6 +127,8 @@ export function buildVCard({ name, phones, emails = [], url = '', note = '' }) {
     'VERSION:3.0',
     `FN:${esc(name || 'Contact')}`,
     `N:${esc(name || 'Contact')};;;;`,
+    ...(company ? [`ORG:${esc(company)}`] : []),
+    ...(title ? [`TITLE:${esc(title)}`] : []),
     ...phones.map((p) => `TEL;TYPE=CELL:${esc(p)}`),
     ...emails.map((e) => `EMAIL;TYPE=INTERNET:${esc(e)}`),
     ...(url ? [`URL:${esc(url)}`] : []),
