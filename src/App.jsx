@@ -42,6 +42,7 @@ export default function App() {
       {/* Dashboard — auth required; ProtectedRoute renders an <Outlet/> */}
       <Route path="/dashboard" element={<ProtectedRoute />}>
         <Route index element={<DashboardHome />} />
+        <Route path="share" element={<SharePage />} />
         <Route path="cards" element={<MyCardsPage />} />
         <Route path="cards/:cardId" element={<CardEditorPage />} />
         <Route path="cards/:cardId/layout" element={<CardLayoutPage />} />

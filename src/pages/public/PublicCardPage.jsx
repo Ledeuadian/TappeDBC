@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
+import { useParams, Link, useLocation } from 'react-router-dom'
 import {
   MailIcon,
   QrCodeIcon,
@@ -9,10 +9,8 @@ import {
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase.js'
 import { useCards } from '../../context/CardContext.jsx'
-import { useAuth } from '../../context/AuthContext.jsx'
 import { getTheme } from '../../themes.js'
 import { iconFor, linkValue, linkHref } from '../../lib/cardIcons.js'
-import OfflineContactQR from '../../components/OfflineContactQR.jsx'
 
 function ContactItem({ icon, title, subtext, theme }) {
   return (
@@ -156,7 +154,7 @@ const CENTERED_ROW_KEYS = ['gmap', 'twitch', 'whatsapp', 'telegram', 'google']
  * light mode → matte-black page, frame starts at the middle of the avatar;
  * night mode → single bordered frame around everything.
  */
-function CenteredLayout({ card, theme, onShowQr, onEdit }) {
+function CenteredLayout({ card, theme, onShowQr }) {
   const cropStyle = (pos) =>
     pos
       ? {
@@ -277,32 +275,19 @@ function CenteredLayout({ card, theme, onShowQr, onEdit }) {
     </>
   )
 
-  // Shared Tappe header — "Tappe" + wifi on the left, an underlined
-  // "Edit" hyperlink on the right (owner-only), parallel with it.
+  // Shared Tappe header — left-aligned "Tappe" + wifi icon.
   const header = (
-    <div className="w-full flex items-center justify-between gap-1.5">
-      <div className="flex items-center gap-1.5">
-        <span
-          className="text-xl font-bold tracking-tight"
-          style={{ color: card.night_mode ? theme.text : '#ffffff' }}
-        >
-          Tappe
-        </span>
-        <WifiIcon
-          className="h-4 w-4 rotate-90"
-          style={{ color: card.night_mode ? theme.accent : '#ffffff' }}
-        />
-      </div>
-      {onEdit && (
-        <button
-          type="button"
-          onClick={onEdit}
-          className="text-sm font-semibold underline underline-offset-4 active:scale-95 transition"
-          style={{ color: card.night_mode ? theme.accent : '#ffffff' }}
-        >
-          Edit
-        </button>
-      )}
+    <div className="w-full flex items-center justify-start gap-1.5">
+      <span
+        className="text-xl font-bold tracking-tight"
+        style={{ color: card.night_mode ? theme.text : '#ffffff' }}
+      >
+        Tappe
+      </span>
+      <WifiIcon
+        className="h-4 w-4 rotate-90"
+        style={{ color: card.night_mode ? theme.accent : '#ffffff' }}
+      />
     </div>
   )
 
@@ -368,9 +353,7 @@ function CenteredLayout({ card, theme, onShowQr, onEdit }) {
 export default function PublicCardPage() {
   const { slug } = useParams()
   const location = useLocation()
-  const navigate = useNavigate()
   const { getCardBySlug } = useCards()
-  const { user } = useAuth()
   // Ephemeral draft preview (passed via router state from the editor's
   // "Preview Card" button — never persisted).
   const draft = location.state?.draft || null
@@ -381,13 +364,6 @@ export default function PublicCardPage() {
   const [notFound, setNotFound] = useState(false)
   // Payment QR entry currently shown in the lightbox
   const [qrLink, setQrLink] = useState(null)
-
-  // Viewer is the owner when:
-  //   - they passed an explicit draft from the dashboard / preview, OR
-  //   - they own the card (auth user id matches card.owner_id)
-  const isOwnerView = Boolean(
-    draft || (user?.id && card?.owner_id && user.id === card.owner_id),
-  )
 
   // Fetch directly from Supabase — public page, no owner context, RLS-allowed
   // (the schema's "cards public select by slug" policy lets anon read
@@ -465,7 +441,6 @@ export default function PublicCardPage() {
             card={card}
             theme={theme}
             onShowQr={(l) => setQrLink(l)}
-            onEdit={isOwnerView ? () => navigate(`/dashboard/cards/${card.id}`) : null}
           />
         </div>
 
@@ -520,19 +495,6 @@ export default function PublicCardPage() {
 
   return (
     <div className="min-h-screen flex flex-col transition-colors duration-300" style={{ background: theme.pageBg }}>
-      {/* Owner-only "Edit" link — top-right, above the card */}
-      {isOwnerView && (
-        <div className="w-full max-w-md mx-auto px-6 pt-3 flex justify-end">
-          <button
-            type="button"
-            onClick={() => navigate(`/dashboard/cards/${card.id}`)}
-            className="text-sm font-semibold underline underline-offset-4 active:scale-95 transition"
-            style={{ color: theme.accent }}
-          >
-            Edit
-          </button>
-        </div>
-      )}
       <div className="relative flex-1 flex flex-col w-full max-w-md mx-auto pt-0">
         {/* Banner photo — rounded corners via inner wrapper so the logo isn't clipped */}
         <div className="relative h-44">
@@ -784,10 +746,6 @@ export default function PublicCardPage() {
             />
           </div>
         </div>
-
-        {/* Offline contact QR — scannable with just a camera, no internet
-            needed. Encodes the card's saved phone number(s) as a vCard. */}
-        <OfflineContactQR card={card} theme={theme} />
 
         {/* Footer */}
         <div className="px-6 py-4 text-right">

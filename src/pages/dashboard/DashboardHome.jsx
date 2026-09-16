@@ -48,14 +48,23 @@ export default function DashboardHome() {
             <div className="w-full max-w-sm">
               <div className="grid gap-4">
                 {cards.map((card) => (
-                  <Link
-                    key={card.id}
-                    to={`/c/${card.slug}`}
-                    state={{ draft: card }}
-                    title="View card"
-                  >
-                    <BusinessCard card={card} className="hover:shadow-md transition" />
-                  </Link>
+                  <div key={card.id} className="relative">
+                    {/* "Preview" link above the card → public card view */}
+                    <div className="mb-2 flex justify-center text-sm">
+                      <Link
+                        to={`/c/${card.slug}`}
+                        state={{ draft: card }}
+                        className="font-medium text-slate-600 hover:text-slate-900 underline underline-offset-4"
+                      >
+                        Preview
+                      </Link>
+                    </div>
+
+                    {/* Card thumbnail → card editor */}
+                    <Link to={`/dashboard/cards/${card.id}`}>
+                      <BusinessCard card={card} className="hover:shadow-md transition" />
+                    </Link>
+                  </div>
                 ))}
               </div>
               <button
@@ -96,7 +105,7 @@ export default function DashboardHome() {
             My Cards
           </button>
           <button
-            onClick={() => setTab('share')}
+            onClick={() => navigate('/dashboard/share')}
             className={`flex-1 rounded-xl py-5 text-base font-semibold transition ${
               tab === 'share'
                 ? 'bg-black text-white'

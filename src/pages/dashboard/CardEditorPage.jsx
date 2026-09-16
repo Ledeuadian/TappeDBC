@@ -34,7 +34,6 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import { uploadCardAsset } from '../../lib/storage.js'
 import { getTheme } from '../../themes.js'
 import { ICON_CATEGORIES, CARD_LINK_ICONS as ALL_ICONS, linkValue } from '../../lib/cardIcons.js'
-import OfflineContactQR from '../../components/OfflineContactQR.jsx'
 
 /**
  * Plain, sophisticated editor — Personal Info only (for now).
@@ -812,13 +811,6 @@ export default function CardEditorPage() {
           style={{ background: theme.surface, color: theme.text, border: fieldBorder }}
         />
         <input
-          value={form.handle || ''}
-          onChange={set('handle')}
-          placeholder="Handle (shown as @handle on the centered layout)"
-          className="w-full px-4 py-2 text-base font-normal outline-none"
-          style={{ background: theme.surface, color: theme.text, border: fieldBorder }}
-        />
-        <input
           value={form.title || ''}
           onChange={set('title')}
           placeholder="Job title"
@@ -1069,11 +1061,6 @@ export default function CardEditorPage() {
           </div>
         </div>
 
-        {/* Offline contact QR — scannable with just a camera, no internet
-            needed. Encodes the card's saved phone number(s) as a vCard.
-            Rendered below the additional-content section so the owner can
-            preview what public viewers will see. */}
-        <OfflineContactQR card={form} theme={theme} />
       </main>
 
       {/* Sticky bottom Preview Card button — appears after scrolling past the top */}

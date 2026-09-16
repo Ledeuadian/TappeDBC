@@ -390,34 +390,19 @@ export default function CardLayoutPage() {
               </>
             )
 
-            // Shared Tappe header — "Tappe" + wifi on the left, an
-            // underlined "Edit" hyperlink on the right, parallel with it.
+            // Shared Tappe header — left-aligned "Tappe" + wifi icon.
             const header = (
-              <div className="w-full flex items-center justify-between gap-1.5">
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className="text-xl font-bold tracking-tight"
-                    style={{ color: card.night_mode ? theme.text : '#ffffff' }}
-                  >
-                    Tappe
-                  </span>
-                  <WifiIcon
-                    className="h-4 w-4 rotate-90"
-                    style={{ color: card.night_mode ? theme.accent : '#ffffff' }}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigate(isNew ? '/dashboard/cards/new' : `/dashboard/cards/${cardId}`, {
-                      state: { layoutDraft: { layout: layoutId } },
-                    })
-                  }
-                  className="text-sm font-semibold underline underline-offset-4 active:scale-95 transition"
-                  style={{ color: card.night_mode ? theme.accent : '#ffffff' }}
+              <div className="w-full flex items-center justify-start gap-1.5">
+                <span
+                  className="text-xl font-bold tracking-tight"
+                  style={{ color: card.night_mode ? theme.text : '#ffffff' }}
                 >
-                  Edit
-                </button>
+                  Tappe
+                </span>
+                <WifiIcon
+                  className="h-4 w-4 rotate-90"
+                  style={{ color: card.night_mode ? theme.accent : '#ffffff' }}
+                />
               </div>
             )
 

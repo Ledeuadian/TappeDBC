@@ -79,7 +79,7 @@ export default function OfflineContactQR({ card, theme }) {
 
 /** Collect phone numbers from the card, deduped, with the primary `phone`
  *  field first and any phone-typed saved links after. */
-function collectPhones(card) {
+export function collectPhones(card) {
   const out = []
   const seen = new Set()
   const push = (raw) => {
@@ -103,8 +103,14 @@ function collectPhones(card) {
 }
 
 /** Build a minimal vCard 3.0 string. Most cameras and dialers import
- *  these without an internet connection. */
-function buildVCard({ name, phones }) {
+ *  these without an internet connection.
+ *
+ *  Optional fields:
+ *   - emails: string[]  → EMAIL entries
+ *   - url:    string    → URL entry (e.g. the card's online share link)
+ *   - note:   string    → NOTE entry (e.g. generation timestamp)
+ */
+export function buildVCard({ name, phones, emails = [], url = '', note = '' }) {
   const esc = (s) =>
     String(s)
       .replace(/\\/g, '\\\\')
@@ -118,7 +124,32 @@ function buildVCard({ name, phones }) {
     `FN:${esc(name || 'Contact')}`,
     `N:${esc(name || 'Contact')};;;;`,
     ...phones.map((p) => `TEL;TYPE=CELL:${esc(p)}`),
+    ...emails.map((e) => `EMAIL;TYPE=INTERNET:${esc(e)}`),
+    ...(url ? [`URL:${esc(url)}`] : []),
+    ...(note ? [`NOTE:${esc(note)}`] : []),
     'END:VCARD',
   ]
   return lines.join('\r\n')
+}
+
+/** Collect emails from the card — the primary `email` column plus any
+ *  email-typed saved links (email / biz_email). Deduped. */
+export function collectEmails(card) {
+  const out = []
+  const seen = new Set()
+  const push = (raw) => {
+    if (!raw) return
+    const v = String(raw).trim().toLowerCase()
+    if (!v || seen.has(v)) return
+    seen.add(v)
+    out.push(v)
+  }
+  push(card.email)
+  if (Array.isArray(card.links)) {
+    for (const link of card.links) {
+      if (!link || (link.icon !== 'email' && link.icon !== 'biz_email')) continue
+      push(link.values?.value)
+    }
+  }
+  return out
 }
