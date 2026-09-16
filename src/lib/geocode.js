@@ -77,8 +77,10 @@ export async function reverseGeocode(lat, lng) {
       postcode: a.postcode || '',
       country: a.country || '',
     }
-    const formatted = buildStructuredAddress(a)
-    return { ...parts, formatted: formatted || null, source: 'nominatim' }
+    // Structured parts first; Nominatim's display_name as a backup for
+    // sparse areas where the structured fields come back empty.
+    const formatted = buildStructuredAddress(a) || data.display_name || null
+    return { ...parts, formatted, source: 'nominatim' }
   } catch {
     return { formatted: null, source: 'coords' }
   }
