@@ -68,18 +68,27 @@ function ShareCardItem({ card, onOpenEditor }) {
   const onlineUrl = `${window.location.origin}/c/${card.slug}`
   const hasOfflinePhones = collectPhones(card).length > 0
   const slug = slugify(card.name)
+  const [showOnlineQr, setShowOnlineQr] = useState(false)
   const [showOfflineQr, setShowOfflineQr] = useState(false)
 
   return (
     <div className="relative group">
       {/* Online + Offline download buttons — top slot, side by side */}
       <div className="mb-2 flex gap-2">
-        <DownloadButton
-          canvasId={`qr-online-${card.id}`}
-          filename={`${slug}-online-qr.png`}
-          label="Online QR"
-          icon={<LinkIcon className="h-4 w-4 shrink-0" />}
-        />
+        <button
+          type="button"
+          onClick={() => setShowOnlineQr(true)}
+          title="Show online link QR"
+          className="flex-1 min-w-0 inline-flex items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-xs font-semibold border transition active:scale-[0.98] whitespace-nowrap"
+          style={{
+            background: '#0f172a',
+            color: '#ffffff',
+            borderColor: '#0f172a',
+          }}
+        >
+          <LinkIcon className="h-4 w-4 shrink-0" />
+          Online QR
+        </button>
         <button
           type="button"
           onClick={() => hasOfflinePhones && setShowOfflineQr(true)}
@@ -107,16 +116,17 @@ function ShareCardItem({ card, onOpenEditor }) {
         <BusinessCard card={card} className="group-hover:shadow-md transition" />
       </button>
 
-      {/* Off-screen canvas used by the Online QR Download button */}
-      <div className="sr-only" aria-hidden="true">
-        <QRCodeCanvas
-          id={`qr-online-${card.id}`}
-          value={onlineUrl}
-          size={512}
-          level="M"
-          includeMargin
+      {/* Online QR pop-up — previews the QR encoding the card's public
+          URL, with a download option. */}
+      {showOnlineQr && (
+        <OnlineQrModal
+          card={card}
+          onlineUrl={onlineUrl}
+          canvasId={`qr-online-${card.id}`}
+          filename={`${slug}-online-qr.png`}
+          onClose={() => setShowOnlineQr(false)}
         />
-      </div>
+      )}
 
       {/* Offline QR pop-up — captures date-time + this device's location
           on generate, embeds both into the vCard NOTE, then offers the
@@ -130,6 +140,58 @@ function ShareCardItem({ card, onOpenEditor }) {
           onClose={() => setShowOfflineQr(false)}
         />
       )}
+    </div>
+  )
+}
+
+/** Pop-up that previews the online QR (the card's public URL) and lets
+ *  the owner download it as a PNG. */
+function OnlineQrModal({ card, onlineUrl, canvasId, filename, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
+      <button
+        type="button"
+        aria-label="Close"
+        onClick={onClose}
+        className="absolute inset-0 bg-black/70"
+      />
+      <div className="relative w-full max-w-xs rounded-2xl p-6 text-center bg-white border border-slate-200 shadow-xl">
+        {/* Close button — top-right */}
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={onClose}
+          className="absolute top-3 right-3 h-8 w-8 grid place-items-center rounded-full text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition"
+        >
+          <XIcon className="h-4 w-4" />
+        </button>
+
+        <h3 className="text-base font-bold text-slate-900">{card.name || 'Online QR'}</h3>
+        <p className="mt-1 text-xs text-slate-500">
+          Scanning opens this card's public page
+        </p>
+
+        {/* QR preview — SVG for crisp rendering in the pop-up itself */}
+        <div className="mt-4 mx-auto w-fit p-3 rounded-2xl bg-white border border-slate-200">
+          <QRCodeSVG value={onlineUrl} size={200} level="M" marginSize={0} />
+        </div>
+
+        {/* The encoded URL */}
+        <p className="mt-3 text-[11px] text-slate-400 break-all">{onlineUrl}</p>
+
+        {/* Hidden 512px canvas used for the PNG download */}
+        <div className="sr-only" aria-hidden="true">
+          <QRCodeCanvas id={canvasId} value={onlineUrl} size={512} level="M" includeMargin />
+        </div>
+
+        <DownloadButton
+          canvasId={canvasId}
+          filename={filename}
+          label="Download QR"
+          icon={<DownloadIcon className="h-4 w-4 shrink-0" />}
+          full
+        />
+      </div>
     </div>
   )
 }
