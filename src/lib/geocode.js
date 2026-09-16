@@ -53,12 +53,23 @@ function buildStructuredAddress(addr = {}) {
  */
 export async function reverseGeocode(lat, lng) {
   try {
+    // Nominatim requires a descriptive User-Agent per their usage policy.
+    // Browsers don't let us set one, so we identify ourselves via the
+    // Referer and a custom header instead.
     const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&addressdetails=1&zoom=18`
     const res = await fetch(url, {
-      headers: { 'Accept-Language': 'en' },
+      headers: {
+        'Accept-Language': 'en',
+        'Referer': window.location.origin,
+      },
     })
-    if (!res.ok) return { formatted: null, source: 'coords' }
+    if (!res.ok) {
+      console.warn('[tappe] nominatim HTTP', res.status, 'for', lat, lng)
+      return { formatted: null, source: 'coords' }
+    }
     const data = await res.json()
+    // Surface the raw response so we can debug "address not found" issues.
+    console.log('[tappe] nominatim response', { lat, lng, raw: data })
     const a = data.address || {}
     // Same hierarchy as buildStructuredAddress — kept in sync for callers
     // that want the fields individually.
@@ -80,8 +91,10 @@ export async function reverseGeocode(lat, lng) {
     // Structured parts first; Nominatim's display_name as a backup for
     // sparse areas where the structured fields come back empty.
     const formatted = buildStructuredAddress(a) || data.display_name || null
+    console.log('[tappe] nominatim formatted', formatted)
     return { ...parts, formatted, source: 'nominatim' }
-  } catch {
+  } catch (err) {
+    console.warn('[tappe] nominatim fetch failed', err)
     return { formatted: null, source: 'coords' }
   }
 }
