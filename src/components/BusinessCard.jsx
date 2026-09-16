@@ -63,7 +63,7 @@ export default function BusinessCard({ card, className = '' }) {
       </div>
 
       {/* Profile + content */}
-      <div className="px-5 pb-5 -mt-9 relative">
+      <div className="px-5 pb-5 pt-3 relative">
         {/* Profile picture — stock position unless the user dragged it */}
         {card.avatar_url && !hasAvatarPos && (
           <img
@@ -71,7 +71,7 @@ export default function BusinessCard({ card, className = '' }) {
             alt=""
             loading="lazy"
             decoding="async"
-            className="h-16 w-16 rounded-full object-cover relative z-10"
+            className="h-16 w-16 rounded-full object-cover relative z-10 -mt-12"
             style={{
               border: profileRing,
               ...cropStyle(card.avatar_url_pos),
@@ -80,7 +80,7 @@ export default function BusinessCard({ card, className = '' }) {
         )}
         {!card.avatar_url && (
           <div
-            className="h-16 w-16 rounded-full grid place-items-center text-xl font-bold relative z-10"
+            className="h-16 w-16 rounded-full grid place-items-center text-xl font-bold relative z-10 -mt-12"
             style={{ background: theme.surface, color: theme.text, border: profileRing }}
           >
             {card.name?.[0]?.toUpperCase() || '?'}
@@ -104,16 +104,18 @@ export default function BusinessCard({ card, className = '' }) {
           </div>
         )}
 
-        {/* Name + pronouns */}
-        <div className="pl-20">
-          <h3 className="mt-3 text-base font-bold" style={{ color: theme.text }}>
-            {card.name || 'Untitled card'}
+        {/* Name + pronouns — clear of the avatar (avatar is 64px wide,
+            anchored at the left edge; reserve ~88px left padding so a
+            long name never tucks under it). */}
+        <div className="pl-[88px] pt-3">
+          <h3 className="text-base font-bold leading-tight flex items-baseline gap-1.5" style={{ color: theme.text }}>
+            <span className="truncate">{card.name || 'Untitled card'}</span>
+            {card.pronouns && (
+              <span className="text-xs shrink-0 font-normal" style={{ color: theme.textMuted }}>
+                ({card.pronouns})
+              </span>
+            )}
           </h3>
-          {card.pronouns && (
-            <span className="text-xs" style={{ color: theme.textMuted }}>
-              ({card.pronouns})
-            </span>
-          )}
           {card.title && (
             <p className="text-sm mt-0.5" style={{ color: theme.text }}>
               {card.title}
