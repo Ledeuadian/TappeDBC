@@ -220,10 +220,10 @@ function OfflineQrModal({ card, onlineUrl, canvasId, filename, onClose }) {
     if (coords) {
       // Reverse-geocode to a structured address. If Nominatim can't
       // resolve a place name for this lat/lng (sparse area, ocean,
-      // untagged road), `where` stays null and the vCard NOTE just
-      // omits the location line — we NEVER embed raw coordinates.
+      // untagged road, or the API is blocked), fall back to the raw
+      // lat/lng so the vCard NOTE still includes a usable location.
       const geo = await reverseGeocode(coords.lat, coords.lng)
-      where = geo.formatted || null
+      where = geo.formatted || `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`
     } else {
       setLocDenied(true)
     }
@@ -318,7 +318,7 @@ function OfflineQrModal({ card, onlineUrl, canvasId, filename, onClose }) {
                 <MapPinIcon className="h-3 w-3 shrink-0" />
                 {locDenied
                   ? 'Location not included (permission denied)'
-                  : stamps.where || 'Address not found for this spot'}
+                  : stamps.where || 'Location unavailable'}
               </p>
               <p>{stamps.when}</p>
               <p>
