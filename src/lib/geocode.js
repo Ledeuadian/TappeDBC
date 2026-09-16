@@ -1,23 +1,71 @@
 /**
- * Reverse-geocode a lat/lng into a human-readable address string using the
- * OpenStreetMap Nominatim service. Free, no API key, but rate-limited to
- * ~1 req/sec. We respect that by NOT firing unless the caller asks.
+ * Build a structured address from a Nominatim `address` object, using the
+ * most specific field available. Falls back through the OSM hierarchy:
+ *   barangay → neighbourhood / suburb / village / hamlet / quarter
+ *   city     → city / town / municipality
+ *   province → state / province / region
+ *   postcode → postcode
+ *   country  → country
+ */
+function buildStructuredAddress(addr = {}) {
+  const barangay =
+    addr.barangay ||
+    addr.neighbourhood ||
+    addr.suburb ||
+    addr.village ||
+    addr.hamlet ||
+    addr.quarter ||
+    addr.city_district ||
+    ''
+  const city =
+    addr.city || addr.town || addr.municipality || addr.county || ''
+  const province = addr.state || addr.province || addr.region || ''
+  const postcode = addr.postcode || ''
+  const country = addr.country || ''
+
+  return [barangay, city, province, postcode, country]
+    .map((s) => String(s).trim())
+    .filter(Boolean)
+    .join(', ')
+}
+
+/**
+ * Reverse-geocode a lat/lng into a structured address using the OpenStreetMap
+ * Nominatim service. Free, no API key, but rate-limited to ~1 req/sec.
  *
- * Returns `{ address, source: 'nominatim' }` on success,
- * `{ address: null, source: 'coords' }` on failure (the caller can still
- * surface the raw lat/lng instead).
+ * Returns:
+ *   - `{ barangay, city, province, postcode, country, formatted, source: 'nominatim' }`
+ *     on success (any of the sub-fields may be empty if Nominatim didn't supply them).
+ *   - `{ formatted: null, source: 'coords' }` on failure (caller can fall back to raw lat/lng).
  */
 export async function reverseGeocode(lat, lng) {
   try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&addressdetails=1&zoom=18`
     const res = await fetch(url, {
       headers: { 'Accept-Language': 'en' },
     })
-    if (!res.ok) return { address: null, source: 'coords' }
+    if (!res.ok) return { formatted: null, source: 'coords' }
     const data = await res.json()
-    return { address: data.display_name || null, source: 'nominatim' }
+    const a = data.address || {}
+    const parts = {
+      barangay:
+        a.barangay ||
+        a.neighbourhood ||
+        a.suburb ||
+        a.village ||
+        a.hamlet ||
+        a.quarter ||
+        a.city_district ||
+        '',
+      city: a.city || a.town || a.municipality || a.county || '',
+      province: a.state || a.province || a.region || '',
+      postcode: a.postcode || '',
+      country: a.country || '',
+    }
+    const formatted = buildStructuredAddress(a)
+    return { ...parts, formatted: formatted || null, source: 'nominatim' }
   } catch {
-    return { address: null, source: 'coords' }
+    return { formatted: null, source: 'coords' }
   }
 }
 

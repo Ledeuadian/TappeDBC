@@ -218,9 +218,9 @@ function OfflineQrModal({ card, onlineUrl, canvasId, filename, onClose }) {
 
     let where = null
     if (coords) {
-      // Reverse-geocode to a readable address; fall back to raw coords.
+      // Reverse-geocode to a structured address; fall back to raw coords.
       const geo = await reverseGeocode(coords.lat, coords.lng)
-      where = geo.address || `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`
+      where = geo.formatted || `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`
     } else {
       setLocDenied(true)
     }
