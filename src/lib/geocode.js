@@ -43,19 +43,64 @@ function buildStructuredAddress(addr = {}) {
 }
 
 /**
- * Reverse-geocode a lat/lng into a structured address using the OpenStreetMap
- * Nominatim service. Free, no API key, but rate-limited to ~1 req/sec.
+ * Reverse-geocode a lat/lng into a structured address.
  *
- * Returns:
- *   - `{ barangay, city, province, postcode, country, formatted, source: 'nominatim' }`
- *     on success (any of the sub-fields may be empty if Nominatim didn't supply them).
- *   - `{ formatted: null, source: 'coords' }` on failure (caller can fall back to raw lat/lng).
+ * Primary: BigDataCloud's free client-side endpoint — explicitly built
+ * for browser use (proper CORS, no key, no UA policy issues). This is
+ * what makes it work on tablets/phones where Nominatim browser fetches
+ * are commonly blocked.
+ * Fallback: OpenStreetMap Nominatim.
+ *
+ * Returns `{ barangay, city, province, postcode, country, formatted,
+ * source }` — `formatted` is null if both providers fail.
  */
 export async function reverseGeocode(lat, lng) {
+  // --- Primary: BigDataCloud (browser-friendly) ---
   try {
-    // Nominatim requires a descriptive User-Agent per their usage policy.
-    // Browsers don't let us set one, so we identify ourselves via the
-    // Referer and a custom header instead.
+    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+    const res = await fetch(url)
+    if (res.ok) {
+      const d = await res.json()
+      // BigDataCloud rarely tags a Philippine barangay directly. When it
+      // does, it appears in the informative list with an explicit
+      // "barangay"/"barrio" description — we don't match broader entries
+      // like congressional districts (too coarse to be useful).
+      const informative = d.localityInfo?.informative || []
+      const barangayCandidate = informative.find((i) =>
+        /barangay|barrio/i.test(i.name || i.description || ''),
+      )
+      const barangay = barangayCandidate?.name || d.locality || ''
+      const city = d.city || ''
+      const province = d.principalSubdivision || ''
+      const postcode = d.postcode || ''
+      const country = d.countryName || ''
+      // Drop the barangay when it duplicates the city (BigDataCloud uses
+      // `locality` as a fallback, which usually equals `city`).
+      const cleanBarangay = barangay && barangay !== city ? barangay : ''
+      const formatted = [cleanBarangay, city, province, postcode, country]
+        .map((s) => String(s || '').trim())
+        .filter(Boolean)
+        .join(', ')
+      if (formatted) {
+        return {
+          barangay: cleanBarangay,
+          city,
+          province,
+          postcode,
+          country,
+          formatted,
+          source: 'bigdatacloud',
+        }
+      }
+    } else {
+      console.warn('[tappe] bigdatacloud HTTP', res.status)
+    }
+  } catch (err) {
+    console.warn('[tappe] bigdatacloud fetch failed', err)
+  }
+
+  // --- Fallback: Nominatim ---
+  try {
     const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&addressdetails=1&zoom=18`
     const res = await fetch(url, {
       headers: {
@@ -68,8 +113,6 @@ export async function reverseGeocode(lat, lng) {
       return { formatted: null, source: 'coords' }
     }
     const data = await res.json()
-    // Surface the raw response so we can debug "address not found" issues.
-    console.log('[tappe] nominatim response', { lat, lng, raw: data })
     const a = data.address || {}
     // Same hierarchy as buildStructuredAddress — kept in sync for callers
     // that want the fields individually.

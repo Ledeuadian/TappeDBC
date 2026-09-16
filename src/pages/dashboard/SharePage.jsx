@@ -218,10 +218,8 @@ function OfflineQrModal({ card, onlineUrl, canvasId, filename, onClose }) {
 
     let where = null
     if (coords) {
-      // Reverse-geocode to a structured address. If Nominatim can't
-      // resolve a place name for this lat/lng (sparse area, ocean,
-      // untagged road, or the API is blocked), fall back to the raw
-      // lat/lng so the vCard NOTE still includes a usable location.
+      // Reverse-geocode to a structured address. Falls back to raw
+      // lat/lng if both providers fail (sparse area, blocked, etc.).
       const geo = await reverseGeocode(coords.lat, coords.lng)
       where = geo.formatted || `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`
     } else {
