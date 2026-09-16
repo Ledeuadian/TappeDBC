@@ -7,19 +7,32 @@
  *   postcode → postcode
  *   country  → country
  */
+/**
+ * Build a structured address from a Nominatim `address` object. Tuned for
+ * the Philippines field map, where OSM rarely populates `barangay` /
+ * `state` / `province` directly and instead uses `neighbourhood` for the
+ * barangay/purok and `region` for the province.
+ *
+ *   barangay → neighbourhood > quarter > suburb > village > hamlet >
+ *              city_district > barangay
+ *   city     → city > town > municipality > county
+ *   province → region > state > province
+ *   postcode → postcode
+ *   country  → country
+ */
 function buildStructuredAddress(addr = {}) {
   const barangay =
-    addr.barangay ||
     addr.neighbourhood ||
+    addr.quarter ||
     addr.suburb ||
     addr.village ||
     addr.hamlet ||
-    addr.quarter ||
     addr.city_district ||
+    addr.barangay ||
     ''
   const city =
     addr.city || addr.town || addr.municipality || addr.county || ''
-  const province = addr.state || addr.province || addr.region || ''
+  const province = addr.region || addr.state || addr.province || ''
   const postcode = addr.postcode || ''
   const country = addr.country || ''
 
@@ -47,18 +60,20 @@ export async function reverseGeocode(lat, lng) {
     if (!res.ok) return { formatted: null, source: 'coords' }
     const data = await res.json()
     const a = data.address || {}
+    // Same hierarchy as buildStructuredAddress — kept in sync for callers
+    // that want the fields individually.
     const parts = {
       barangay:
-        a.barangay ||
         a.neighbourhood ||
+        a.quarter ||
         a.suburb ||
         a.village ||
         a.hamlet ||
-        a.quarter ||
         a.city_district ||
+        a.barangay ||
         '',
       city: a.city || a.town || a.municipality || a.county || '',
-      province: a.state || a.province || a.region || '',
+      province: a.region || a.state || a.province || '',
       postcode: a.postcode || '',
       country: a.country || '',
     }
