@@ -1,151 +1,75 @@
 /**
- * Build a structured address from a Nominatim `address` object, using the
- * most specific field available. Falls back through the OSM hierarchy:
- *   barangay → neighbourhood / suburb / village / hamlet / quarter
- *   city     → city / town / municipality
- *   province → state / province / region
- *   postcode → postcode
- *   country  → country
- */
-/**
- * Build a structured address from a Nominatim `address` object. Tuned for
- * the Philippines field map, where OSM rarely populates `barangay` /
- * `state` / `province` directly and instead uses `neighbourhood` for the
- * barangay/purok and `region` for the province.
- *
- *   barangay → neighbourhood > quarter > suburb > village > hamlet >
- *              city_district > barangay
- *   city     → city > town > municipality > county
- *   province → region > state > province
- *   postcode → postcode
- *   country  → country
- */
-function buildStructuredAddress(addr = {}) {
-  const barangay =
-    addr.neighbourhood ||
-    addr.quarter ||
-    addr.suburb ||
-    addr.village ||
-    addr.hamlet ||
-    addr.city_district ||
-    addr.barangay ||
-    ''
-  const city =
-    addr.city || addr.town || addr.municipality || addr.county || ''
-  const province = addr.region || addr.state || addr.province || ''
-  const postcode = addr.postcode || ''
-  const country = addr.country || ''
-
-  return [barangay, city, province, postcode, country]
-    .map((s) => String(s).trim())
-    .filter(Boolean)
-    .join(', ')
-}
-
-/**
  * Reverse-geocode a lat/lng into a structured address.
  *
- * Primary: BigDataCloud's free client-side endpoint — explicitly built
- * for browser use (proper CORS, no key, no UA policy issues). This is
- * what makes it work on tablets/phones where Nominatim browser fetches
- * are commonly blocked.
- * Fallback: OpenStreetMap Nominatim.
+ * Calls the deployed Supabase Edge Function (server-side proxy) — this
+ * is the ONLY provider we hit from the browser, because:
+ *   • The site's CSP blocks direct calls to bigdatacloud.net and
+ *     nominatim.openstreetmap.org.
+ *   • Some PH mobile networks CORS-block those providers too.
+ *   • Browser-side fetches to Nominatim violate their UA policy.
+ *
+ * The edge function itself runs Nominatim (with proper UA) and falls
+ * back to BigDataCloud if needed.
  *
  * Returns `{ barangay, city, province, postcode, country, formatted,
- * source }` — `formatted` is null if both providers fail.
+ * source }` — `formatted` is null if the lookup fails.
  */
 export async function reverseGeocode(lat, lng) {
-  // --- Primary: BigDataCloud (browser-friendly) ---
-  try {
-    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
-    const res = await fetch(url)
-    if (res.ok) {
-      const d = await res.json()
-      // BigDataCloud rarely tags a Philippine barangay directly. When it
-      // does, it appears in the informative list with an explicit
-      // "barangay"/"barrio" description — we don't match broader entries
-      // like congressional districts (too coarse to be useful).
-      const informative = d.localityInfo?.informative || []
-      const barangayCandidate = informative.find((i) =>
-        /barangay|barrio/i.test(i.name || i.description || ''),
-      )
-      const barangay = barangayCandidate?.name || d.locality || ''
-      const city = d.city || ''
-      const province = d.principalSubdivision || ''
-      const postcode = d.postcode || ''
-      const country = d.countryName || ''
-      // Drop the barangay when it duplicates the city (BigDataCloud uses
-      // `locality` as a fallback, which usually equals `city`).
-      const cleanBarangay = barangay && barangay !== city ? barangay : ''
-      const formatted = [cleanBarangay, city, province, postcode, country]
-        .map((s) => String(s || '').trim())
-        .filter(Boolean)
-        .join(', ')
-      if (formatted) {
-        return {
-          barangay: cleanBarangay,
-          city,
-          province,
-          postcode,
-          country,
-          formatted,
-          source: 'bigdatacloud',
-        }
-      }
-    } else {
-      console.warn('[tappe] bigdatacloud HTTP', res.status)
-    }
-  } catch (err) {
-    console.warn('[tappe] bigdatacloud fetch failed', err)
-  }
-
-  // --- Fallback: Nominatim ---
-  try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&addressdetails=1&zoom=18`
-    const res = await fetch(url, {
-      headers: {
-        'Accept-Language': 'en',
-        'Referer': window.location.origin,
-      },
-    })
-    if (!res.ok) {
-      console.warn('[tappe] nominatim HTTP', res.status, 'for', lat, lng)
-      return { formatted: null, source: 'coords' }
-    }
-    const data = await res.json()
-    const a = data.address || {}
-    // Same hierarchy as buildStructuredAddress — kept in sync for callers
-    // that want the fields individually.
-    const parts = {
-      barangay:
-        a.neighbourhood ||
-        a.quarter ||
-        a.suburb ||
-        a.village ||
-        a.hamlet ||
-        a.city_district ||
-        a.barangay ||
-        '',
-      city: a.city || a.town || a.municipality || a.county || '',
-      province: a.region || a.state || a.province || '',
-      postcode: a.postcode || '',
-      country: a.country || '',
-    }
-    // Structured parts first; Nominatim's display_name as a backup for
-    // sparse areas where the structured fields come back empty.
-    const formatted = buildStructuredAddress(a) || data.display_name || null
-    console.log('[tappe] nominatim formatted', formatted)
-    return { ...parts, formatted, source: 'nominatim' }
-  } catch (err) {
-    console.warn('[tappe] nominatim fetch failed', err)
+  const fnUrl = import.meta.env.APP_SUPABASE_URL
+  if (!fnUrl) {
+    console.warn('[tappe] APP_SUPABASE_URL not set — geocoding disabled')
     return { formatted: null, source: 'coords' }
   }
+
+  try {
+    const url = `${fnUrl}/functions/v1/reverse-geocode?lat=${lat}&lon=${lng}`
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${import.meta.env.APP_SUPABASE_ANON_KEY}`,
+      },
+    })
+    if (res.ok) {
+      const d = await res.json()
+      console.log('[tappe] geocode result', d)
+      if (d.formatted) return d
+      // The server already tried its own fallbacks — if it couldn't
+      // resolve, no point retrying from the client.
+      return { formatted: null, source: 'coords' }
+    }
+    console.warn('[tappe] geocode HTTP', res.status)
+  } catch (err) {
+    console.warn('[tappe] geocode fetch failed', err)
+  }
+
+  return { formatted: null, source: 'coords' }
 }
 
 /** Best-effort single-shot geolocation. Resolves to `{ lat, lng }` or
- *  `null` if denied / unavailable / timed out. */
+ *  `null` if denied / unavailable / timed out.
+ *
+ *  Dev override: set `localStorage.setItem('tappe_debug_coords', 'lat,lng')`
+ *  in DevTools (F12 → Console) to bypass the device GPS — useful for
+ *  testing the geocoder on a desktop that has no GPS. Clear the key
+ *  (or call `localStorage.removeItem('tappe_debug_coords')`) to restore
+ *  real geolocation. Example:
+ *    localStorage.setItem('tappe_debug_coords', '8.4542,124.6319')
+ */
 export function getCurrentPosition(timeoutMs = 10000) {
   return new Promise((resolve) => {
+    try {
+      const override = window.localStorage?.getItem('tappe_debug_coords')
+      if (override) {
+        const [latStr, lngStr] = override.split(',').map((s) => s.trim())
+        const lat = parseFloat(latStr)
+        const lng = parseFloat(lngStr)
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          console.log('[tappe] using debug coords from localStorage:', lat, lng)
+          return resolve({ lat, lng })
+        }
+      }
+    } catch {
+      /* localStorage unavailable — fall through to real geolocation */
+    }
     if (!('geolocation' in navigator)) return resolve(null)
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),

@@ -99,7 +99,10 @@ export function CardProvider({ children }) {
     if (!user) throw new Error('You must be signed in to create a card')
 
     const fields = pickCardFields(data)
-    const insert = { ...fields, owner_id: user.id, slug: slugify(fields.name) }
+    // Auto-publish: every saved card is publicly readable by slug
+    // (see the "cards public select by slug" RLS policy). This makes the
+    // Online QR link work for anyone who scans it — no login required.
+    const insert = { ...fields, is_published: true, owner_id: user.id, slug: slugify(fields.name) }
 
     // Retry once with a fresh slug on a unique-constraint conflict
     let result, error
@@ -120,6 +123,9 @@ export function CardProvider({ children }) {
       throw new Error(`updateCard called with invalid cardId: ${JSON.stringify(cardId)}`)
     }
     const fields = pickCardFields(data)
+    // Auto-publish: updates keep the card publicly readable so the
+    // Online QR link never breaks after an edit.
+    fields.is_published = true
     const { data: result, error } = await supabase
       .from('cards')
       .update(fields)

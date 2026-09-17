@@ -11,6 +11,36 @@ import { supabase } from '../../lib/supabase.js'
 import { useCards } from '../../context/CardContext.jsx'
 import { getTheme } from '../../themes.js'
 import { iconFor, linkValue, linkHref } from '../../lib/cardIcons.js'
+import { buildVCard, collectPhones, collectEmails } from '../../components/OfflineContactQR.jsx'
+
+/**
+ * Download a vCard (.vcf) file built from the card's contact info.
+ * Most phones (iOS Safari, Android Chrome, default Contacts apps)
+ * auto-prompt the user to add the contact when a .vcf is opened —
+ * exactly the flow the Offline QR produces, but triggered from the
+ * public card view's "Save Contact" button.
+ */
+function downloadVCard(card, onlineUrl) {
+  const vcard = buildVCard({
+    name: card.name || '',
+    company: card.company || '',
+    title: card.title || '',
+    phones: collectPhones(card),
+    emails: collectEmails(card),
+    url: onlineUrl,
+    note: `Saved from Tappe on ${new Date().toLocaleDateString()}`,
+  })
+  const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${(card.name || 'contact').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.vcf`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  // Free the object URL after the browser has had a chance to start the download.
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
 
 function ContactItem({ icon, title, subtext, theme }) {
   return (
@@ -257,9 +287,11 @@ function CenteredLayout({ card, theme, onShowQr }) {
       })()}
 
       {/* Save Contact CTA — orange pill w/ black text in night mode,
-          matte black pill w/ white text in light mode */}
+          matte black pill w/ white text in light mode. Downloads the
+          card as a vCard (.vcf) — the phone prompts "Add to Contacts". */}
       <button
         type="button"
+        onClick={() => downloadVCard(card, `${window.location.origin}/c/${card.slug}`)}
         className="mt-6 w-full rounded-full text-sm font-bold py-3.5 active:scale-[0.98] transition shadow-lg flex items-center justify-center gap-2"
         style={{
           background: card.night_mode ? '#f97316' : '#1a1a1a',
@@ -660,8 +692,12 @@ export default function PublicCardPage() {
           {/* Tagline / bio */}
           {card.bio && <p className="text-sm mt-2 italic" style={{ color: theme.textMuted }}>{card.bio}</p>}
 
-          {/* Save Contact CTA — black in light mode, strong orange in night */}
+          {/* Save Contact CTA — black in light mode, strong orange in night.
+              Downloads the card as a vCard (.vcf) — the phone prompts
+              "Add to Contacts", same as the Offline QR flow. */}
           <button
+            type="button"
+            onClick={() => downloadVCard(card, `${window.location.origin}/c/${card.slug}`)}
             className="w-[calc(100%-36px)] mt-5 rounded-2xl text-sm font-bold py-3.5 active:scale-[0.98] transition shadow-lg ml-[18px]"
             style={{
               background: card.night_mode ? '#ea580c' : '#0f172a',
