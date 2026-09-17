@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react'
-import { LinkIcon, WifiOffIcon, XIcon, DownloadIcon, MapPinIcon, LoaderCircleIcon, UserRoundIcon } from 'lucide-react'
+import { LinkIcon, WifiOffIcon, XIcon, DownloadIcon, MapPinIcon, LoaderCircleIcon } from 'lucide-react'
 import { useCards } from '../../context/CardContext.jsx'
 import BusinessCard from '../../components/BusinessCard.jsx'
 import { buildVCard, collectPhones, collectEmails } from '../../components/OfflineContactQR.jsx'
@@ -144,24 +144,11 @@ function ShareCardItem({ card, onOpenEditor }) {
   )
 }
 
-/** Pop-up that previews the online QR (the card's public URL) and lets
- *  the owner download both a URL QR and a vCard (.vcf) of the contact.
- *
- *  Same geolocation capture as the offline QR — so when the owner
- *  downloads the vCard, the meeting date/time + place name are stamped
- *  into the vCard NOTE, just like the offline flow. */
+/** Pop-up that previews the online QR (the card's public URL). The QR
+ *  itself encodes only the URL — when scanned, the phone opens the
+ *  public card page where the Save Contact button downloads the vCard.
+ *  No vCard button here; that lives on the public page itself. */
 function OnlineQrModal({ card, onlineUrl, canvasId, filename, onClose }) {
-  const [step, setStep] = useState('generate')
-  const [vcardReady, setVcardReady] = useState(false)
-  const handleGenerate = async () => {
-    setStep('locating')
-    // Run the same geocode flow the offline modal uses. The resulting
-    // stamps get baked into the vCard's NOTE so the scanner's phone
-    // saves the meeting context along with the contact.
-    await getStampsForCard(card)
-    setVcardReady(true)
-    setStep('ready')
-  }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
       <button
@@ -182,72 +169,30 @@ function OnlineQrModal({ card, onlineUrl, canvasId, filename, onClose }) {
         </button>
 
         <h3 className="text-base font-bold text-slate-900">{card.name || 'Online QR'}</h3>
+        <p className="mt-1 text-xs text-slate-500">
+          Scanning opens this card's public page
+        </p>
 
-        {step === 'generate' && (
-          <>
-            <p className="mt-1 text-xs text-slate-500">
-              This will prepare a URL QR and a vCard with the card's contact info.
-            </p>
-            <p className="mt-2 text-[11px] text-slate-400">
-              Your browser will ask for location permission so we can stamp today's date, time, and place into the vCard — same as the Offline QR.
-            </p>
-            <button
-              type="button"
-              onClick={handleGenerate}
-              className="w-full mt-5 rounded-xl px-4 py-2.5 text-xs font-semibold bg-slate-900 text-white active:scale-[0.98] transition"
-            >
-              Generate QR &amp; vCard
-            </button>
-          </>
-        )}
+        {/* QR preview — SVG for crisp rendering in the pop-up itself */}
+        <div className="mt-4 mx-auto w-fit p-3 rounded-2xl bg-white border border-slate-200">
+          <QRCodeSVG value={onlineUrl} size={200} level="M" marginSize={0} />
+        </div>
 
-        {step === 'locating' && (
-          <div className="mt-6 flex flex-col items-center gap-2">
-            <LoaderCircleIcon className="h-6 w-6 animate-spin text-slate-400" />
-            <p className="text-xs text-slate-500">Capturing date-time &amp; location…</p>
-          </div>
-        )}
+        {/* The encoded URL */}
+        <p className="mt-3 text-[11px] text-slate-400 break-all">{onlineUrl}</p>
 
-        {step === 'ready' && (
-          <>
-            <p className="mt-1 text-xs text-slate-500">
-              Scanning opens this card's public page
-            </p>
+        {/* Hidden 512px canvas used for the PNG download */}
+        <div className="sr-only" aria-hidden="true">
+          <QRCodeCanvas id={canvasId} value={onlineUrl} size={512} level="M" includeMargin />
+        </div>
 
-            {/* QR preview — SVG for crisp rendering in the pop-up itself */}
-            <div className="mt-4 mx-auto w-fit p-3 rounded-2xl bg-white border border-slate-200">
-              <QRCodeSVG value={onlineUrl} size={180} level="M" marginSize={0} />
-            </div>
-
-            <p className="mt-3 text-[11px] text-slate-400 break-all">{onlineUrl}</p>
-
-            {/* Hidden 512px canvas used for the PNG download */}
-            <div className="sr-only" aria-hidden="true">
-              <QRCodeCanvas id={canvasId} value={onlineUrl} size={512} level="M" includeMargin />
-            </div>
-
-            <DownloadButton
-              canvasId={canvasId}
-              filename={filename}
-              label="Download QR"
-              icon={<DownloadIcon className="h-4 w-4 shrink-0" />}
-              full
-            />
-
-            <button
-              type="button"
-              onClick={() => downloadVCardForCard(card, onlineUrl)}
-              disabled={!vcardReady}
-              className="w-full mt-2 rounded-xl px-4 py-2.5 text-xs font-semibold bg-white text-slate-900 border border-slate-300 hover:bg-slate-50 active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
-            >
-              <UserRoundIcon className="h-4 w-4 shrink-0" />
-              Download vCard (.vcf)
-            </button>
-            <p className="mt-2 text-[10px] text-slate-400">
-              The vCard includes name, phone, email, and today's meeting date/time &amp; place.
-            </p>
-          </>
-        )}
+        <DownloadButton
+          canvasId={canvasId}
+          filename={filename}
+          label="Download QR"
+          icon={<DownloadIcon className="h-4 w-4 shrink-0" />}
+          full
+        />
       </div>
     </div>
   )
@@ -477,67 +422,8 @@ function slugify(s) {
 }
 
 // ---------------------------------------------------------------------------
-// Shared helpers used by BOTH online and offline QR modals. Keeping them here
-// (not duplicated inside each modal) means the vCard generation flow stays
-// in sync as it evolves.
+// Offline-modal helper: builds the vCard with the meeting date/time +
+// location captured at QR-generation time. The Online QR doesn't go
+// through this — its vCard is generated by the public page's Save
+// Contact button, which doesn't have a "met here" context.
 // ---------------------------------------------------------------------------
-
-/** Get the user's current date-time + (best-effort) address and stash them
- *  in `window.__tappe_lastStamps`. Both modals read from this when building
- *  their vCard NOTE. Returns the stamps object for callers that want it. */
-async function getStampsForCard(_card) {
-  const when = new Date()
-  let where = null
-  try {
-    const coords = await getCurrentPosition()
-    if (coords) {
-      const geo = await reverseGeocode(coords.lat, coords.lng)
-      where = geo.formatted || `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`
-    }
-  } catch {
-    /* fall through — stamps will just have a date without an address */
-  }
-  const stamps = { when: when.toLocaleString(), where }
-  window.__tappe_lastStamps = stamps
-  return stamps
-}
-
-/** Build the vCard payload for a card using whatever stamps were last
- *  captured. Falls back to a "Saved on <date>" note when no stamps exist
- *  (e.g. the user clicked the Download button without going through the
- *  geolocation prompt). */
-function buildStampedVCard(card, onlineUrl) {
-  const stamps = window.__tappe_lastStamps
-  const note = stamps
-    ? [
-        `Meeting date/time: ${stamps.when}`,
-        stamps.where ? `Meeting location: ${stamps.where}` : null,
-      ]
-        .filter(Boolean)
-        .join('\\n')
-    : `Saved from Tappe on ${new Date().toLocaleDateString()}`
-  return buildVCard({
-    name: card.name || '',
-    company: card.company || '',
-    title: card.title || '',
-    phones: collectPhones(card),
-    emails: collectEmails(card),
-    url: onlineUrl,
-    note,
-  })
-}
-
-/** Trigger a .vcf download for a card. */
-function downloadVCardForCard(card, onlineUrl) {
-  const vcard = buildStampedVCard(card, onlineUrl)
-  const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  const safeName = (card.name || 'contact').replace(/[^a-z0-9]+/gi, '-').toLowerCase()
-  a.download = `${slugify(card.name) || safeName}.vcf`
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
