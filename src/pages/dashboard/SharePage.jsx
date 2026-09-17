@@ -178,9 +178,6 @@ function OnlineQrModal({ card, onlineUrl, canvasId, filename, onClose }) {
           <QRCodeSVG value={onlineUrl} size={200} level="M" marginSize={0} />
         </div>
 
-        {/* The encoded URL */}
-        <p className="mt-3 text-[11px] text-slate-400 break-all">{onlineUrl}</p>
-
         {/* Hidden 512px canvas used for the PNG download */}
         <div className="sr-only" aria-hidden="true">
           <QRCodeCanvas id={canvasId} value={onlineUrl} size={512} level="M" includeMargin />
