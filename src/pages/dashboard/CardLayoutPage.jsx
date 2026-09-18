@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { MailIcon, QrCodeIcon, ChevronRightIcon, UserRoundIcon, WifiIcon } from 'lucide-react'
 import { useCards } from '../../context/CardContext.jsx'
@@ -61,37 +61,11 @@ function SavedLinkItem({ link, theme }) {
 }
 
 /**
- * Change Layout page — opens like the preview, but the profile picture
- * and logo are freely draggable. The user can drop them anywhere on the
- * card (over the cover photo or below it). Positions are saved as
- * percentages (layoutX / layoutY) inside the existing *_url_pos JSONB
- * columns, so no schema change is needed.
- *
- * Defaults mirror the standard BusinessCard layout:
- *   avatar: left ~5.5%, top ~30% (overlapping the cover)
- *   logo:   left ~78%,  top ~45%
+ * Change Layout page — opens like the public preview. The user just
+ * picks the layout variant (Standard or Centered). Standard keeps the
+ * profile picture and logo in their fixed stock positions, exactly as
+ * they appear on the published public page.
  */
-
-// Default placements (percent of card width/height) — match the stock
-// BusinessCard look so untouched cards render exactly as before. Public
-// preview anchors:
-//   avatar: bottom-left of cover overlap (~ 12.5%, 40%)
-//   logo:   bottom-right of cover (~ 75%, 55%)
-const DEFAULT_LAYOUTS = {
-  avatar: { x: 12.5, y: 40 },
-  logo: { x: 75, y: 55 },
-}
-
-const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v))
-
-/** Initial layout state for one element — saved pos wins, else default. */
-function initialLayout(pos, key) {
-  const d = DEFAULT_LAYOUTS[key]
-  if (pos && typeof pos.layoutX === 'number' && typeof pos.layoutY === 'number') {
-    return { x: pos.layoutX, y: pos.layoutY }
-  }
-  return { ...d }
-}
 
 /** Crop object style — same math as the editor/BusinessCard. */
 function cropStyle(pos) {
@@ -113,88 +87,19 @@ export default function CardLayoutPage() {
   const card = location.state?.draft || (!isNew ? getCard(cardId) : null) || {}
   const theme = getTheme(card.night_mode)
 
-  // Live drag positions — saved only when the user taps Save
-  const [layout, setLayout] = useState({
-    avatar: initialLayout(card.avatar_url_pos, 'avatar'),
-    logo: initialLayout(card.logo_url_pos, 'logo'),
-  })
   const [saving, setSaving] = useState(false)
 
-  // Layout variant — 'standard' (draggable avatar/logo) or 'centered'
+  // Layout variant — 'standard' (fixed avatar/logo positions) or 'centered'
   const [layoutId, setLayoutId] = useState(card.layout === 'centered' ? 'centered' : 'standard')
-
-  // The card surface — drag coordinates are measured against it
-  const cardRef = useRef(null)
-  // { key, offsetX, offsetY } while dragging
-  const dragRef = useRef(null)
 
   const handleCancel = () => {
     navigate(isNew ? '/dashboard/cards/new' : `/dashboard/cards/${cardId}`, { replace: true })
   }
 
-  const startDrag = (e, key) => {
-    e.preventDefault()
-    const rect = cardRef.current?.getBoundingClientRect()
-    if (!rect) return
-    // Grab offset (in % of card) between the pointer and the element's
-    // CURRENT layout position — derived from state, not the bounding
-    // rect (which includes the crop scale transform and would jump).
-    const cur = layout[key]
-    dragRef.current = {
-      key,
-      rect,
-      offX: ((e.clientX - rect.left) / rect.width) * 100 - cur.x,
-      offY: ((e.clientY - rect.top) / rect.height) * 100 - cur.y,
-      startX: e.clientX,
-      startY: e.clientY,
-      moved: false,
-    }
-    e.currentTarget.setPointerCapture?.(e.pointerId)
-  }
-
-  const moveDrag = (e) => {
-    const d = dragRef.current
-    if (!d) return
-    // Ignore sub-pixel jitter so a plain click never nudges the element
-    if (!d.moved && Math.abs(e.clientX - d.startX) < 2 && Math.abs(e.clientY - d.startY) < 2) {
-      return
-    }
-    d.moved = true
-    const px = ((e.clientX - d.rect.left) / d.rect.width) * 100
-    const py = ((e.clientY - d.rect.top) / d.rect.height) * 100
-    setLayout((l) => ({
-      ...l,
-      [d.key]: {
-        // Keep the grab offset, clamp inside the card
-        x: clamp(px - d.offX, -6, 100),
-        y: clamp(py - d.offY, -4, 96),
-      },
-    }))
-  }
-
-  const endDrag = (e) => {
-    const d = dragRef.current
-    if (!d) return
-    e.currentTarget?.releasePointerCapture?.(e.pointerId)
-    dragRef.current = null
-  }
-
   const handleSave = async () => {
-    // Persist drag positions as layoutX/layoutY — keeping the crop x/y
-    // (used by object-position) intact. This is what every reader
-    // (BusinessCard, PublicCardPage) keys off: `layoutX != null`.
-    const positions = {
-      avatar_url_pos: {
-        ...(card.avatar_url_pos || {}),
-        layoutX: layout.avatar.x,
-        layoutY: layout.avatar.y,
-      },
-      logo_url_pos: {
-        ...(card.logo_url_pos || {}),
-        layoutX: layout.logo.x,
-        layoutY: layout.logo.y,
-      },
-    }
+    // Standard layout keeps the stock avatar/logo positions, so we just
+    // persist the chosen variant.
+    const payload = { layout: layoutId }
 
     // For an unsaved draft (no id yet) we can't persist — return the
     // updated draft to the editor via router state instead.
@@ -202,27 +107,18 @@ export default function CardLayoutPage() {
       navigate('/dashboard/cards/new', {
         replace: true,
         state: {
-          layoutDraft: {
-            ...positions,
-            layout: layoutId,
-          },
+          layoutDraft: payload,
         },
       })
       return
     }
     setSaving(true)
     try {
-      await updateCard(cardId, {
-        ...positions,
-        layout: layoutId,
-      })
+      await updateCard(cardId, payload)
       navigate(`/dashboard/cards/${cardId}`, {
         replace: true,
         state: {
-          layoutDraft: {
-            ...positions,
-            layout: layoutId,
-          },
+          layoutDraft: payload,
         },
       })
     } catch (err) {
@@ -258,12 +154,6 @@ export default function CardLayoutPage() {
       </header>
 
       <main className="flex-1 px-5 pb-10 flex flex-col items-center">
-        {layoutId !== 'centered' && (
-          <p className="mb-4 text-sm text-center" style={{ color: theme.textMuted }}>
-            Drag your profile picture and logo anywhere on the card.
-          </p>
-        )}
-
         {layoutId === 'centered' ? (
           (() => {
             /* ----------------------------------------------------------
@@ -462,12 +352,8 @@ export default function CardLayoutPage() {
             )
           })()
         ) : (
-        /* The card — identical markup/sizes to the public preview hero.
-            Drag positions are a % of this container. */
-        <div
-          ref={cardRef}
-          className="relative w-full max-w-md touch-none select-none"
-        >
+        /* The card — identical markup/sizes to the public preview hero. */
+        <div className="relative w-full max-w-md">
           {/* Banner photo — rounded corners via inner wrapper (h-44 like preview) */}
           <div className="relative h-44">
             <div
@@ -493,22 +379,55 @@ export default function CardLayoutPage() {
                 />
               )}
             </div>
+
+            {/* Logo chip — fixed bottom-right of cover (matches the public preview) */}
+            {card.logo_url && (
+              <div
+                className="absolute -bottom-6 right-10 h-16 w-16 rounded-xl overflow-hidden z-30"
+                style={{ background: theme.surface, border: `2px solid ${theme.border}` }}
+              >
+                <img
+                  src={card.logo_url}
+                  alt=""
+                  draggable={false}
+                  className="h-full w-full object-cover"
+                  style={cropStyle(card.logo_url_pos)}
+                />
+              </div>
+            )}
+            {!card.logo_url && card.company && (
+              <div
+                className="absolute -bottom-6 right-10 h-16 w-16 rounded-xl grid place-items-center z-30"
+                style={{ background: theme.accent }}
+              >
+                <span className="text-white text-xs font-bold tracking-wider">
+                  {card.company.split(' ').map((w) => w[0]).join('').slice(0, 3).toUpperCase()}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Text content — same sizes / spacing / padding as the preview */}
           <div className="px-6 -mt-16 relative z-10">
-            {/* Static avatar placeholder spot — keeps text spacing stable
-                when the avatar is dragged elsewhere */}
-            {card.avatar_url && (
-              <div className="h-32 w-32 invisible" aria-hidden="true" />
-            )}
-            {!card.avatar_url && (
+            {/* Profile picture — fixed position overlapping the cover (matches the public preview) */}
+            {card.avatar_url ? (
+              <img
+                src={card.avatar_url}
+                alt="Profile"
+                draggable={false}
+                className="h-32 w-32 rounded-full object-cover"
+                style={{
+                  border: '4px solid #ffffff',
+                  ...cropStyle(card.avatar_url_pos),
+                }}
+              />
+            ) : (
               <div
                 className="h-32 w-32 rounded-full grid place-items-center text-4xl font-bold"
                 style={{
                   background: theme.surface,
                   color: theme.text,
-                  border: '3px solid #ffffff',
+                  border: '4px solid #ffffff',
                 }}
               >
                 {card.name?.[0]?.toUpperCase() || '?'}
@@ -652,47 +571,6 @@ export default function CardLayoutPage() {
           <div className="flex justify-center pb-4" aria-hidden="true">
             <div className="h-1.5 w-36 rounded-full" style={{ background: theme.border }} />
           </div>
-
-          {/* Draggable profile picture — same size/ring as the preview (h-32, 4px ring) */}
-          {card.avatar_url && (
-            <img
-              src={card.avatar_url}
-              alt="Profile"
-              draggable={false}
-              onPointerDown={(e) => startDrag(e, 'avatar')}
-              onPointerMove={moveDrag}
-              onPointerUp={endDrag}
-              onPointerCancel={endDrag}
-              className="absolute h-32 w-32 rounded-full object-cover cursor-grab active:cursor-grabbing touch-none z-30"
-              style={{
-                left: `${layout.avatar.x}%`,
-                top: `${layout.avatar.y}%`,
-                border: '4px solid #ffffff',
-                ...cropStyle(card.avatar_url_pos),
-              }}
-            />
-          )}
-
-          {/* Draggable logo — same size/ring as the preview (h-16) */}
-          {card.logo_url && (
-            <img
-              src={card.logo_url}
-              alt="Logo"
-              draggable={false}
-              onPointerDown={(e) => startDrag(e, 'logo')}
-              onPointerMove={moveDrag}
-              onPointerUp={endDrag}
-              onPointerCancel={endDrag}
-              className="absolute h-16 w-16 rounded-xl object-cover cursor-grab active:cursor-grabbing touch-none z-30"
-              style={{
-                left: `${layout.logo.x}%`,
-                top: `${layout.logo.y}%`,
-                border: `2px solid ${theme.border}`,
-                background: theme.surface,
-                ...cropStyle(card.logo_url_pos),
-              }}
-            />
-          )}
         </div>
         )}
 
@@ -705,7 +583,7 @@ export default function CardLayoutPage() {
             Card layout
           </p>
           {[
-            { id: 'standard', label: 'Standard', hint: 'Cover photo, draggable profile & logo' },
+            { id: 'standard', label: 'Standard', hint: 'Cover photo with profile & logo' },
             { id: 'centered', label: 'Centered', hint: 'Profile centered with socials frame' },
           ].map((opt) => (
             <label
@@ -730,11 +608,6 @@ export default function CardLayoutPage() {
           ))}
         </div>
 
-        {layoutId === 'standard' && (
-          <p className="mt-4 text-xs" style={{ color: theme.textMuted }}>
-            Tip: drag the images onto the cover photo or anywhere below it.
-          </p>
-        )}
       </main>
     </div>
   )

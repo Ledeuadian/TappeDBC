@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import {
-  PencilIcon, UserIcon, PlusIcon, ChevronDownIcon,
+  PencilIcon, UserIcon, PlusIcon, ChevronDownIcon, EllipsisIcon, Trash2Icon,
 } from 'lucide-react'
 
 /**
@@ -44,7 +44,7 @@ export default function CardEditorPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const isNew = cardId === 'new'
-  const { getCard, getCardBySlug, createCard, updateCard, loading } = useCards()
+  const { getCard, getCardBySlug, createCard, updateCard, deleteCard, loading } = useCards()
   const { user } = useAuth()
   const card = isNew ? null : getCard(cardId)
   // Authoritative id — for existing cards, prefer URL param. For new cards
@@ -90,6 +90,32 @@ export default function CardEditorPage() {
   const [expanded, setExpanded] = useState(false)
   // Inline editing of the card name in the top-center nav title
   const [editingName, setEditingName] = useState(false)
+  // 3-dot settings menu on the cover photo (top-right)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  /** Delete the current card (existing cards only) — confirms first. */
+  const handleDeleteCard = async () => {
+    if (isNew || !effectiveId) {
+      // Unsaved draft — just leave the editor, nothing to delete
+      navigate('/dashboard', { replace: true })
+      return
+    }
+    const confirmed = window.confirm(
+      `Delete "${form.name || 'this card'}"? This can't be undone.`
+    )
+    if (!confirmed) return
+    setDeleting(true)
+    try {
+      await deleteCard(effectiveId)
+      navigate('/dashboard', { replace: true })
+    } catch (err) {
+      console.error('[tappe] card delete failed:', err)
+      alert('Delete failed: ' + err.message)
+      setDeleting(false)
+      setSettingsOpen(false)
+    }
+  }
 
   const toggleExpanded = () => {
     setExpanded((v) => !v)
@@ -668,6 +694,52 @@ export default function CardEditorPage() {
                 ↻
               </span>
             )}
+
+            {/* 3-dot settings button — top-right of the cover photo */}
+            <div className="absolute top-2 right-2 z-40">
+              {settingsOpen && (
+                <>
+                  {/* Click-outside backdrop */}
+                  <div
+                    className="fixed inset-0"
+                    onClick={() => setSettingsOpen(false)}
+                    aria-hidden="true"
+                  />
+                  {/* Dropdown menu */}
+                  <div
+                    className="absolute right-0 top-9 w-44 rounded-xl overflow-hidden shadow-lg"
+                    style={{ background: theme.surface, border: `1px solid ${theme.border}` }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      disabled={deleting}
+                      onClick={handleDeleteCard}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-left hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-50 transition"
+                      style={{ color: '#dc2626' }}
+                    >
+                      <Trash2Icon className="h-4 w-4 shrink-0" />
+                      {deleting ? 'Deleting…' : 'Delete Card'}
+                    </button>
+                  </div>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setSettingsOpen((v) => !v)
+                }}
+                aria-label="Card settings"
+                className="grid place-items-center h-8 w-8 rounded-full transition"
+                style={{
+                  background: 'rgba(0,0,0,0.7)',
+                  color: '#ffffff',
+                }}
+              >
+                <EllipsisIcon className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           {/* Logo — drag to reposition, Replace chip */}
