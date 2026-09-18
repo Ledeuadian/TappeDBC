@@ -88,9 +88,19 @@ export default function CardLayoutPage() {
   const theme = getTheme(card.night_mode)
 
   const [saving, setSaving] = useState(false)
+  const [layoutSheetOpen, setLayoutSheetOpen] = useState(true)
 
   // Layout variant — 'standard' (fixed avatar/logo positions) or 'centered'
   const [layoutId, setLayoutId] = useState(card.layout === 'centered' ? 'centered' : 'standard')
+
+  const isDarkSheet = layoutId === 'centered' && !card.night_mode
+  const sheetText = isDarkSheet ? '#f8fafc' : theme.text
+  const sheetMuted = isDarkSheet ? '#cbd5e1' : theme.textMuted
+
+  const layoutOptions = [
+    { id: 'standard', label: 'Standard', hint: 'Cover photo' },
+    { id: 'centered', label: 'Centered', hint: 'Social frame' },
+  ]
 
   const handleCancel = () => {
     navigate(isNew ? '/dashboard/cards/new' : `/dashboard/cards/${cardId}`, { replace: true })
@@ -436,28 +446,28 @@ export default function CardLayoutPage() {
 
             {/* Name + pronouns */}
             <div className="mt-3 flex items-baseline gap-2 flex-wrap pl-[18px]">
-              <h1 className="text-2xl font-bold" style={{ color: theme.text }}>
+              <h1 className="text-2xl font-bold" style={{ color: '#ffffff' }}>
                 {card.name || 'Untitled card'}
               </h1>
               {card.pronouns && (
-                <span className="text-sm" style={{ color: theme.textMuted }}>
+                <span className="text-sm" style={{ color: 'rgba(255,255,255,0.78)' }}>
                   ({card.pronouns})
                 </span>
               )}
             </div>
 
             {card.title && (
-              <p className="text-base mt-1 pl-[18px]" style={{ color: theme.text }}>
+              <p className="text-base mt-1 pl-[18px]" style={{ color: '#ffffff' }}>
                 {card.title}
               </p>
             )}
             {card.company && (
-              <p className="text-base mt-0.5 pl-[18px]" style={{ color: theme.text }}>
+              <p className="text-base mt-0.5 pl-[18px]" style={{ color: '#ffffff' }}>
                 {card.company}
               </p>
             )}
             {card.headline && (
-              <p className="text-sm mt-1 pl-[18px]" style={{ color: theme.textMuted }}>
+              <p className="text-sm mt-1 pl-[18px]" style={{ color: 'rgba(255,255,255,0.78)' }}>
                 {card.headline}
               </p>
             )}
@@ -476,9 +486,9 @@ export default function CardLayoutPage() {
                       style={{
                         background: card.night_mode
                           ? 'rgba(255,255,255,0.08)'
-                          : 'rgba(15, 23, 42, 0.06)',
-                        color: theme.text,
-                        border: `1px solid ${theme.border}`,
+                          : 'rgba(255,255,255,0.10)',
+                        color: '#ffffff',
+                        border: '1px solid rgba(255,255,255,0.18)',
                       }}
                     >
                       {acc}
@@ -489,7 +499,7 @@ export default function CardLayoutPage() {
 
             {/* Tagline / bio */}
             {card.bio && (
-              <p className="text-sm mt-2 italic" style={{ color: theme.textMuted }}>{card.bio}</p>
+              <p className="text-sm mt-2 italic" style={{ color: 'rgba(255,255,255,0.78)' }}>{card.bio}</p>
             )}
 
             {/* Save Contact CTA — same colors as the preview */}
@@ -574,41 +584,82 @@ export default function CardLayoutPage() {
         </div>
         )}
 
-        {/* Layout picker — radio buttons at the bottom */}
+      </main>
+
+      <div className="fixed inset-0 z-40 pointer-events-none">
         <div
-          className="mt-6 w-full max-w-md rounded-2xl p-4 flex flex-col gap-3"
-          style={{ background: theme.surface, border: `1px solid ${theme.border}` }}
+          className={`absolute inset-0 bg-black/20 transition-opacity duration-300 ${layoutSheetOpen ? 'opacity-100' : 'opacity-0'}`}
+          onClick={() => setLayoutSheetOpen(false)}
+        />
+
+        <div
+          className={`pointer-events-auto absolute inset-x-0 bottom-0 mx-auto max-w-md w-full rounded-t-[28px] border px-4 pb-6 pt-3 shadow-2xl backdrop-blur-sm transition-transform duration-300 ease-out ${layoutSheetOpen ? 'translate-y-0' : 'translate-y-[72%]'}`}
+          style={{
+            background: isDarkSheet ? 'rgba(18, 18, 18, 0.82)' : 'rgba(15, 23, 42, 0.62)',
+            borderColor: isDarkSheet ? 'rgba(255,255,255,0.18)' : theme.border,
+            color: '#f8fafc',
+          }}
         >
-          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: theme.textMuted }}>
+          <button
+            type="button"
+            onClick={() => setLayoutSheetOpen((v) => !v)}
+            aria-label={layoutSheetOpen ? 'Hide layout options' : 'Show layout options'}
+            className="mx-auto block h-1 w-10 rounded-full transition active:scale-95"
+            style={{ background: isDarkSheet ? 'rgba(255,255,255,0.38)' : 'rgba(255,255,255,0.55)' }}
+          />
+
+          <p className="mt-3 text-sm font-semibold uppercase tracking-[0.12em]" style={{ color: '#f8fafc' }}>
             Card layout
           </p>
-          {[
-            { id: 'standard', label: 'Standard', hint: 'Cover photo with profile & logo' },
-            { id: 'centered', label: 'Centered', hint: 'Profile centered with socials frame' },
-          ].map((opt) => (
-            <label
-              key={opt.id}
-              className="flex items-center gap-3 cursor-pointer"
-              style={{ color: theme.text }}
-            >
-              <input
-                type="radio"
-                name="card-layout"
-                value={opt.id}
-                checked={layoutId === opt.id}
-                onChange={() => setLayoutId(opt.id)}
-                className="h-4 w-4 accent-orange-600"
-                style={{ accentColor: theme.accent }}
-              />
-              <span className="flex flex-col">
-                <span className="text-sm font-semibold">{opt.label}</span>
-                <span className="text-xs" style={{ color: theme.textMuted }}>{opt.hint}</span>
-              </span>
-            </label>
-          ))}
-        </div>
 
-      </main>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {layoutOptions.map((opt) => {
+              const isActive = layoutId === opt.id
+              const tileBg = isActive
+                ? theme.accent
+                : opt.id === 'standard'
+                  ? '#ffffff'
+                  : '#f1f5f9'
+              const tileText = isActive
+                ? '#ffffff'
+                : opt.id === 'standard'
+                  ? '#0f172a'
+                  : '#475569'
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => {
+                    setLayoutId(opt.id)
+                    setLayoutSheetOpen(true)
+                  }}
+                  className="rounded-2xl border p-3 text-left transition-all duration-200"
+                  style={{
+                    borderColor: isActive ? theme.accent : 'rgba(15,23,42,0.08)',
+                    background: tileBg,
+                    color: tileText,
+                    boxShadow: isActive ? `0 0 0 1px ${theme.accent} inset` : 'none',
+                  }}
+                >
+                  <div className="text-sm font-semibold">{opt.label}</div>
+                  <div className="mt-1 text-[11px]" style={{ color: tileText, opacity: 0.85 }}>
+                    {opt.hint}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setLayoutSheetOpen(false)}
+            className="mt-5 w-full rounded-full py-3 text-sm font-bold active:scale-[0.98] transition shadow-lg"
+            style={{ background: theme.accent, color: '#ffffff' }}
+          >
+            Choose layout
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

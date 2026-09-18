@@ -53,25 +53,34 @@ export function CardProvider({ children }) {
   const [cards, setCards] = useState([])
   const [loading, setLoading] = useState(true)
 
+  const fetchUserCards = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return []
+    }
+
+    const { data, error } = await supabase
+      .from('cards')
+      .select('*')
+      .eq('owner_id', user.id)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('[tappe] load cards error', error)
+      return []
+    }
+
+    return data || []
+  }, [])
+
   // Initial load of the signed-in user's cards; reload on auth changes
   useEffect(() => {
     let mounted = true
 
     const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setCards([])
-        setLoading(false)
-        return
-      }
-      const { data, error } = await supabase
-        .from('cards')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error) console.error('[tappe] load cards error', error)
+      const userCards = await fetchUserCards()
       if (mounted) {
-        setCards(data || [])
+        setCards(userCards)
         setLoading(false)
       }
     }
@@ -82,27 +91,27 @@ export function CardProvider({ children }) {
       mounted = false
       sub?.subscription?.unsubscribe?.()
     }
-  }, [])
+  }, [fetchUserCards])
 
   const refresh = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('cards')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (error) throw error
-    setCards(data || [])
-    return data || []
-  }, [])
+    const userCards = await fetchUserCards()
+    setCards(userCards)
+    return userCards
+  }, [fetchUserCards])
 
   const createCard = async (data) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('You must be signed in to create a card')
 
     const fields = pickCardFields(data)
-    // Auto-publish: every saved card is publicly readable by slug
-    // (see the "cards public select by slug" RLS policy). This makes the
-    // Online QR link work for anyone who scans it — no login required.
-    const insert = { ...fields, is_published: true, owner_id: user.id, slug: slugify(fields.name) }
+    const safeName = (fields.name || '').trim() || (data?.brand_title || '').trim() || 'New card'
+    const insert = {
+      ...fields,
+      name: safeName,
+      is_published: true,
+      owner_id: user.id,
+      slug: slugify(safeName),
+    }
 
     // Retry once with a fresh slug on a unique-constraint conflict
     let result, error

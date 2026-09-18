@@ -266,6 +266,11 @@ export default function CardEditorPage() {
     setLinkErrors({})
   }
 
+  const ensureCardName = (draft = form) => {
+    const nextName = (draft.name || draft.brand_title || 'New card').trim() || 'New card'
+    return nextName
+  }
+
   /** Save the popup: uploads a pending QR file if there is one, then
    *  adds/updates the corresponding entry in form.links. */
   const saveLinkModal = async () => {
@@ -292,10 +297,12 @@ export default function CardEditorPage() {
         let id = effectiveId
         if (!id || id === 'undefined' || id === 'null') {
           // Brand-new card — create the row first so storage path is stable
-          const created = await createCard(form)
+          const prepared = { ...form, name: ensureCardName(form) }
+          const created = await createCard(prepared)
           if (created?.id) {
             id = created.id
             savedOnceRef.current = true
+            setForm((f) => ({ ...f, name: prepared.name }))
             window.history.replaceState(null, '', `/dashboard/cards/${created.id}`)
           }
         }
@@ -438,7 +445,10 @@ export default function CardEditorPage() {
     navigate(`/c/preview`, { state: { draft: form } })
   }
 
-  /** Upload an image to Supabase Storage, then persist its public URL on the card. */
+  /** Upload an image to Supabase Storage and keep it as a draft until Save.
+   *  For a brand-new card, we do NOT persist immediately — we only upload the
+   *  asset and keep the URL in local form state. The DB row is created on the
+   *  user's explicit Save, which matches the expected editor behavior. */
   const handleImageUpload = async (e, field, key) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -449,34 +459,17 @@ export default function CardEditorPage() {
       return
     }
 
-    // Show a local preview immediately for snappy UX
     const localUrl = URL.createObjectURL(file)
     setForm((f) => ({ ...f, [field]: localUrl }))
+    setDirty(true)
     setUploading((u) => ({ ...u, [key]: true }))
-
-    // If this is a brand-new card, create the row first so we have an id
-    let id = effectiveId
-    if (!id || id === 'undefined' || id === 'null') {
-      try {
-        const created = await createCard(form)
-        if (created?.id) {
-          id = created.id
-          savedOnceRef.current = true
-          window.history.replaceState(null, '', `/dashboard/cards/${created.id}`)
-        }
-      } catch (err) {
-        console.error('[tappe] create before upload failed:', err)
-        alert('Could not save card before upload: ' + err.message)
-        setUploading((u) => ({ ...u, [key]: false }))
-        e.target.value = ''
-        return
-      }
-    }
 
     try {
       const { url } = await uploadCardAsset({ file, ownerId: user.id })
       setForm((f) => ({ ...f, [field]: url }))
-      await updateCard(id, { [field]: url })
+      if (effectiveId && effectiveId !== 'undefined' && effectiveId !== 'null') {
+        await updateCard(effectiveId, { [field]: url })
+      }
     } catch (err) {
       console.error(`[tappe] upload ${field} failed:`, err)
       alert(`Upload failed: ${err.message}`)
@@ -494,14 +487,16 @@ export default function CardEditorPage() {
   /** Save a chosen crop: persist to the matching `_<field>_pos` column on the card. */
   const handleCropSave = async (crop) => {
     if (!pendingSave) return
-    if (!effectiveId || effectiveId === 'undefined' || effectiveId === 'null') {
-      console.error('[tappe] crop save aborted — no card id', { effectiveId, pendingSave })
-      setPendingSave(null)
-      return
-    }
     const posField = `${pendingSave.field}_pos`
     setForm((f) => ({ ...f, [posField]: crop }))
     setDraftPos((d) => ({ ...d, [posField]: null })) // clear local draft
+    setDirty(true)
+
+    if (!effectiveId || effectiveId === 'undefined' || effectiveId === 'null') {
+      setPendingSave(null)
+      return
+    }
+
     try {
       await updateCard(effectiveId, { [posField]: crop })
     } catch (err) {
@@ -520,7 +515,7 @@ export default function CardEditorPage() {
 
   /** Inline drag — start on pointerdown over the image, update draft, end on pointerup. */
   const startDrag = (e, field, src) => {
-    if (!src || !effectiveId) return
+    if (!src) return
     e.preventDefault()
     const rect = e.currentTarget.getBoundingClientRect()
     const saved = form[`${field}_pos`] || { x: 50, y: 50, scale: 1 }
@@ -559,7 +554,7 @@ export default function CardEditorPage() {
     e.currentTarget?.releasePointerCapture?.(e.pointerId)
     if (d.moved) lastDragEndRef.current = Date.now()
     dragRef.current = null
-    if (!d.moved || !effectiveId) return // it was a click, or card isn't ready yet
+    if (!d.moved) return // it was a click, not a drag
     const posField = `${d.field}_pos`
     const draft = draftRef.current?.[posField] || form[posField] || { x: 50, y: 50, scale: 1 }
     setPendingSave({ field: d.field, src: form[d.field], crop: draft })
@@ -655,7 +650,7 @@ export default function CardEditorPage() {
           {/* Cover photo — drag to reposition, Replace chip, no modal */}
           <div
             className="block h-32 w-full overflow-hidden relative cursor-pointer"
-            onClick={form.cover_url ? openPicker('cover_url') : undefined}
+            onClick={openPicker('cover_url')}
             style={{ background: theme.surface, border: `1px solid ${theme.border}` }}
           >
             {/* Shared hidden input — opened by any click on the frame */}
