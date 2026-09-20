@@ -18,7 +18,7 @@ export default function DashboardLayout() {
   }
 
   return (
-    <div className="min-h-full flex bg-slate-50">
+    <div className="min-h-full flex bg-slate-50 dark:bg-zinc-900">
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-200">
         <div className="h-16 px-6 flex items-center border-b border-slate-200">
           <NavLink to="/" className="flex items-center gap-2">

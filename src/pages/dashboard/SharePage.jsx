@@ -20,11 +20,11 @@ export default function SharePage() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-zinc-900 via-zinc-900 to-black text-white">
       <main className="flex-1 px-6 sm:px-10 pt-5 pb-8 max-w-6xl w-full mx-auto">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Share</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-2xl font-bold text-white">Share</h1>
+          <p className="text-sm text-zinc-400 mt-1">
             Download a QR for each card — online (link) or offline (vCard).
           </p>
         </div>
@@ -45,15 +45,15 @@ export default function SharePage() {
 
       {/* Bottom segmented toggle — same as the Overview page */}
       <nav className="px-6 pb-8 pt-4">
-        <div className="max-w-sm mx-auto bg-slate-100 rounded-xl p-1.5 flex">
+        <div className="max-w-sm mx-auto bg-white/10 rounded-xl p-1.5 flex ring-1 ring-white/10">
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex-1 rounded-xl py-4 text-base font-semibold transition text-slate-500 hover:text-slate-700"
+            className="flex-1 rounded-xl py-4 text-base font-semibold transition text-zinc-400 hover:text-white"
           >
             My Cards
           </button>
           <button
-            className="flex-1 rounded-xl py-5 text-base font-semibold transition bg-black text-white"
+            className="flex-1 rounded-xl py-5 text-base font-semibold transition bg-white text-zinc-900 shadow"
           >
             Share
           </button>
@@ -110,10 +110,10 @@ function ShareCardItem({ card, onOpenEditor }) {
       <button
         type="button"
         onClick={onOpenEditor}
-        className="block w-full text-left"
+        className="block w-full text-left rounded-2xl p-[3px] shadow-[0_0_60px_-10px_rgba(255,255,255,0.4)] hover:shadow-[0_0_80px_-10px_rgba(255,255,255,0.55)] transition"
         aria-label={`Edit ${card.name || 'card'}`}
       >
-        <BusinessCard card={card} className="group-hover:shadow-md transition" />
+        <BusinessCard card={card} className="group-hover:shadow-none transition-shadow" />
       </button>
 
       {/* Online QR pop-up — previews the QR encoding the card's public

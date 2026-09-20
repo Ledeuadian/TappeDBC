@@ -18,11 +18,11 @@ export default function DashboardHome() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-zinc-900 via-zinc-900 to-black text-white">
       {/* Header — hamburger top-left */}
       <header className="px-6 pt-5 pb-2">
         <button
-          className="p-1 -ml-1 text-black"
+          className="p-1 -ml-1 text-white"
           aria-label="Open menu"
           onClick={() => navigate('/dashboard/settings')}
         >
@@ -39,10 +39,10 @@ export default function DashboardHome() {
         {tab === 'my-cards' ? (
           cards.length === 0 ? (
             <button onClick={handleAddCard} className="flex flex-col items-center group">
-              <div className="h-16 w-16 rounded-2xl bg-slate-100 grid place-items-center group-active:scale-95 transition">
-                <PlusIcon className="h-8 w-8 text-black" strokeWidth={1.5} />
+              <div className="h-16 w-16 rounded-2xl bg-white/10 grid place-items-center group-active:scale-95 transition">
+                <PlusIcon className="h-8 w-8 text-white" strokeWidth={1.5} />
               </div>
-              <p className="mt-3 text-sm font-bold text-black">Add Card</p>
+              <p className="mt-3 text-sm font-bold text-white">Add Card</p>
             </button>
           ) : (
             <div className="w-full max-w-sm">
@@ -54,15 +54,18 @@ export default function DashboardHome() {
                       <Link
                         to={`/c/${card.slug}`}
                         state={{ draft: card }}
-                        className="font-medium text-slate-600 hover:text-slate-900 underline underline-offset-4"
+                        className="font-medium text-zinc-300 hover:text-white underline underline-offset-4"
                       >
                         Preview
                       </Link>
                     </div>
 
                     {/* Card thumbnail → card editor */}
-                    <Link to={`/dashboard/cards/${card.id}`}>
-                      <BusinessCard card={card} className="hover:shadow-md transition" />
+                    <Link
+                      to={`/dashboard/cards/${card.id}`}
+                      className="block rounded-2xl p-[3px] shadow-[0_0_60px_-10px_rgba(255,255,255,0.4)] hover:shadow-[0_0_80px_-10px_rgba(255,255,255,0.55)] transition"
+                    >
+                      <BusinessCard card={card} className="hover:shadow-none transition-shadow" />
                     </Link>
                   </div>
                 ))}
@@ -71,20 +74,20 @@ export default function DashboardHome() {
                 onClick={handleAddCard}
                 className="mt-6 mx-auto flex flex-col items-center group"
               >
-                <div className="h-16 w-16 rounded-2xl bg-slate-100 grid place-items-center group-active:scale-95 transition">
-                  <PlusIcon className="h-8 w-8 text-black" strokeWidth={1.5} />
+                <div className="h-16 w-16 rounded-2xl bg-white/10 grid place-items-center group-active:scale-95 transition">
+                  <PlusIcon className="h-8 w-8 text-white" strokeWidth={1.5} />
                 </div>
-                <p className="mt-3 text-sm font-bold text-black">Add Card</p>
+                <p className="mt-3 text-sm font-bold text-white">Add Card</p>
               </button>
             </div>
           )
         ) : (
           <div className="text-center">
-            <div className="h-28 w-28 rounded-3xl bg-slate-100 grid place-items-center mx-auto">
-              <PlusIcon className="h-12 w-12 text-black" strokeWidth={1.5} />
+            <div className="h-28 w-28 rounded-3xl bg-white/10 grid place-items-center mx-auto">
+              <PlusIcon className="h-12 w-12 text-white" strokeWidth={1.5} />
             </div>
-            <p className="mt-5 text-lg font-bold text-black">Share</p>
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-5 text-lg font-bold text-white">Share</p>
+            <p className="mt-2 text-sm text-zinc-400">
               Share options appear here once you have a card.
             </p>
           </div>
@@ -93,13 +96,13 @@ export default function DashboardHome() {
 
       {/* Bottom segmented toggle */}
       <nav className="px-6 pb-8 pt-4">
-        <div className="max-w-sm mx-auto bg-slate-100 rounded-xl p-1.5 flex">
+        <div className="max-w-sm mx-auto bg-white/10 rounded-xl p-1.5 flex ring-1 ring-white/10">
           <button
             onClick={() => setTab('my-cards')}
             className={`flex-1 rounded-xl py-4 text-base font-semibold transition ${
               tab === 'my-cards'
-                ? 'bg-black text-white'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'bg-white text-zinc-900 shadow'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             My Cards
@@ -108,8 +111,8 @@ export default function DashboardHome() {
             onClick={() => navigate('/dashboard/share')}
             className={`flex-1 rounded-xl py-5 text-base font-semibold transition ${
               tab === 'share'
-                ? 'bg-black text-white'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'bg-white text-zinc-900 shadow'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             Share

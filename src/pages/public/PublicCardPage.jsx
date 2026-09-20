@@ -263,23 +263,58 @@ function CenteredLayout({ card, theme, onShowQr }) {
             {rows.map((link, idx) => {
               const meta = iconFor(link.icon)
               const isQr = !!link.values?.qr_url
-              return (
-                <button
-                  key={`row-${idx}`}
-                  type="button"
-                  onClick={() => isQr && onShowQr(link)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-left"
-                  style={{
-                    border: `1px solid ${theme.border}`,
-                    background: card.night_mode ? 'rgba(255,255,255,0.03)' : 'rgba(15, 23, 42, 0.02)',
-                  }}
-                >
+              const href = linkHref(link)
+              const handleClick = () => {
+                if (isQr) onShowQr(link)
+              }
+              const inner = (
+                <>
                   <LinkBrandIcon link={link} fallbackColor={theme.accent} className="h-7 w-7" />
                   <span className="flex-1 text-sm font-medium truncate" style={{ color: theme.text }}>
                     {meta.label || link.label}
                   </span>
                   <ChevronRightIcon className="h-5 w-5 shrink-0" style={{ color: theme.textMuted }} />
-                </button>
+                </>
+              )
+              const rowStyle = {
+                border: `1px solid ${theme.border}`,
+                background: card.night_mode ? 'rgba(255,255,255,0.03)' : 'rgba(15, 23, 42, 0.02)',
+              }
+              if (href) {
+                return (
+                  <a
+                    key={`row-${idx}`}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-4 py-3 rounded-2xl text-left"
+                    style={rowStyle}
+                  >
+                    {inner}
+                  </a>
+                )
+              }
+              if (isQr) {
+                return (
+                  <button
+                    key={`row-${idx}`}
+                    type="button"
+                    onClick={handleClick}
+                    className="flex items-center gap-3 px-4 py-3 rounded-2xl text-left w-full"
+                    style={rowStyle}
+                  >
+                    {inner}
+                  </button>
+                )
+              }
+              return (
+                <div
+                  key={`row-${idx}`}
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-left opacity-60"
+                  style={rowStyle}
+                >
+                  {inner}
+                </div>
               )
             })}
           </div>

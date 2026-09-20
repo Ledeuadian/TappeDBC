@@ -82,7 +82,62 @@ export function linkValue(link) {
 /** True when the entry should open as a URL (has a link-style value). */
 export function linkHref(link) {
   const v = link?.values || {}
-  if (v.value && /^https?:\/\//i.test(v.value)) return v.value
-  if (v.value && v.value.includes('@') && !v.value.includes(' ')) return `mailto:${v.value}`
+  const icon = link?.icon || ''
+  const val = v.value || ''
+  const raw = val.trim()
+
+  // Phone entries live in `mobile`/`landline` rather than `value`
+  if (icon === 'phone' || icon === 'biz_phone') {
+    const phone = (v.mobile || v.landline || '').replace(/[^\d+]/g, '')
+    if (phone) return `tel:${phone}`
+    return null
+  }
+
+  // WhatsApp / Telegram get a wa.me / tg universal deep link so the app
+  // opens on phones, fallback to web otherwise
+  if (icon === 'whatsapp') {
+    const phone = (v.mobile || v.value || '').replace(/[^\d]/g, '')
+    if (phone) return `https://wa.me/${phone}`
+    return raw ? `https://wa.me/${encodeURIComponent(raw)}` : null
+  }
+  if (icon === 'telegram') {
+    const handle = (v.value || '').replace(/^@/, '')
+    if (handle) return `https://t.me/${encodeURIComponent(handle)}`
+    return null
+  }
+
+  // Discord / Twitch — value is a username, link to the canonical URL
+  if (icon === 'discord') {
+    return raw ? `https://discord.com/users/${encodeURIComponent(raw)}` : null
+  }
+  if (icon === 'twitch') {
+    return raw ? `https://www.twitch.tv/${encodeURIComponent(raw)}` : null
+  }
+
+  // Social platforms accept either a full URL or a `@handle`/username.
+  // Normalize to a deep URL so the platform opens directly.
+  if (raw && /^https?:\/\//i.test(raw)) {
+    return raw
+  }
+  const handle = raw.replace(/^@/, '')
+  const SOCIAL_URLS = {
+    instagram: `https://instagram.com/${handle}`,
+    facebook: `https://facebook.com/${handle}`,
+    linkedin: `https://linkedin.com/in/${handle}`,
+    tiktok: `https://tiktok.com/@${handle}`,
+    youtube: `https://youtube.com/@${handle}`,
+    twitter: `https://x.com/${handle}`,
+  }
+  if (handle && SOCIAL_URLS[icon]) return SOCIAL_URLS[icon]
+
+  // Google Maps — value is a query, link to maps search
+  if (icon === 'gmap') {
+    if (!raw) return null
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(raw)}`
+  }
+
+  // Generic value handling — url, email, or fall through to null
+  if (raw && raw.includes('@') && !raw.includes(' ')) return `mailto:${raw}`
+
   return null
 }

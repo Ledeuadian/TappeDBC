@@ -36,8 +36,11 @@ export default function MyCardsPage() {
             </div>
 
             {/* Card thumbnail → card editor */}
-            <Link to={`/dashboard/cards/${card.id}`}>
-              <BusinessCard card={card} className="group-hover:shadow-md transition" />
+            <Link
+              to={`/dashboard/cards/${card.id}`}
+              className="block rounded-2xl p-[3px] shadow-[0_0_60px_-10px_rgba(255,255,255,0.4)] hover:shadow-[0_0_80px_-10px_rgba(255,255,255,0.55)] transition"
+            >
+              <BusinessCard card={card} className="group-hover:shadow-none transition-shadow" />
             </Link>
 
             {/* Delete on hover — bottom-right */}

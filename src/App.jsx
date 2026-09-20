@@ -16,6 +16,7 @@ const CardLayoutPage = lazy(() => import('./pages/dashboard/CardLayoutPage.jsx')
 const MyCardsPage = lazy(() => import('./pages/dashboard/MyCardsPage.jsx'))
 const SharePage = lazy(() => import('./pages/dashboard/SharePage.jsx'))
 const SettingsPage = lazy(() => import('./pages/dashboard/SettingsPage.jsx'))
+const InviteFriendsPage = lazy(() => import('./pages/dashboard/InviteFriendsPage.jsx'))
 const PublicCardPage = lazy(() => import('./pages/public/PublicCardPage.jsx'))
 const ClaimPage = lazy(() => import('./pages/ClaimPage.jsx'))
 
@@ -48,6 +49,7 @@ export default function App() {
         <Route path="cards/:cardId/layout" element={<CardLayoutPage />} />
         <Route path="cards/:cardId/share" element={<SharePage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="settings/invite" element={<InviteFriendsPage />} />
       </Route>
 
       {/* Public digital card view (no auth) */}
